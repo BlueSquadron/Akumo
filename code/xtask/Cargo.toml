@@ -1,0 +1,21 @@
+[package]
+name = "xtask"
+description = "Akumo dev automation: dependency-direction lint (and later: docgen, leak-detector, bundle signing)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "xtask"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = { workspace = true }
+akumo-dsl = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

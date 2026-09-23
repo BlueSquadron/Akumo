@@ -127,3 +127,23 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# ---- Rust (Akumo implementation lives under code/) ----
+/code/target/
+code/**/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock.orig
+
+# Akumo engagement state / loot must never be committed
+*.akumo-engagement
+.akumo-state/
+**/.akumo-state/
+/engagements/
+**/*.loot
+
+# Local content bundles & signing keys
+*.akumo-bundle
+*.minisig
+signing-key*
+!**/*.pub

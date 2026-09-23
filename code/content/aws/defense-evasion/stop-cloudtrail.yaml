@@ -1,0 +1,41 @@
+metadata:
+  id: aws.cloudtrail.defense-evasion.stop-logging
+  name: Stop CloudTrail Logging
+  description: >-
+    Stop a CloudTrail trail to disable cloud audit logging (defense evasion).
+    Reversible: logging can be restarted, though events during the gap are lost.
+  author: Akumo
+  version: "1.0.0"
+  provider: aws
+  mitre: ["T1562.008"]
+  references:
+    - "https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html"
+  impact: mutating-reversible
+  expected_telemetry:
+    - source: cloudtrail
+      event_name: StopLogging
+      fields:
+        eventSource: cloudtrail.amazonaws.com
+
+contract:
+  inputs:
+    - name: trail
+      type: string
+      required: true
+  preconditions:
+    - predicate: { name: has_permission, args: ["$foothold", "cloudtrail:StopLogging"] }
+      min_status: proven
+  effects:
+    - predicate: { name: logging_disabled, args: ["$trail"] }
+
+steps:
+  - id: stop-logging
+    body:
+      type: call
+      service: cloudtrail
+      operation: StopLogging
+      params: { Name: "$trail" }
+    revert:
+      service: cloudtrail
+      operation: StartLogging
+      params: { Name: "$trail" }

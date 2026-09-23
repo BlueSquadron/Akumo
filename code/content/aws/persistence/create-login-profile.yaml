@@ -1,0 +1,41 @@
+metadata:
+  id: aws.iam.persistence.create-login-profile
+  name: Create Console Login Profile
+  description: >-
+    Create a console password (login profile) for an IAM user to gain
+    interactive console access as that user.
+  author: Akumo
+  version: "1.0.0"
+  provider: aws
+  mitre: ["T1098"]
+  references:
+    - "https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html"
+  impact: mutating-reversible
+  expected_telemetry:
+    - source: cloudtrail
+      event_name: CreateLoginProfile
+      fields:
+        eventSource: iam.amazonaws.com
+
+contract:
+  inputs:
+    - name: user
+      type: principal
+      required: true
+  preconditions:
+    - predicate: { name: has_permission, args: ["$foothold", "iam:CreateLoginProfile"] }
+      min_status: proven
+  effects:
+    - predicate: { name: can_access, args: ["$user", "aws-console"] }
+
+steps:
+  - id: create-login-profile
+    body:
+      type: call
+      service: iam
+      operation: CreateLoginProfile
+      params: { UserName: "$user" }
+    revert:
+      service: iam
+      operation: DeleteLoginProfile
+      params: { UserName: "$user" }

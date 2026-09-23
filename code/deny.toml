@@ -1,0 +1,30 @@
+# cargo-deny configuration. Run: cargo deny check
+# Guards licenses, security advisories, and banned dependencies.
+
+[advisories]
+version = 2
+yanked = "deny"
+
+[licenses]
+version = 2
+# Akumo is Apache-2.0; allow the common permissive licenses of typical Rust deps.
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Zlib",
+]
+confidence-threshold = 0.9
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+# NFR-EXT1 is enforced structurally by `xtask dep-lint`; this section is a coarse backstop.
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"

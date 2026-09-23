@@ -1,0 +1,55 @@
+name: CI (live-AWS fidelity tier)
+
+# Release-gated fidelity tier (ADR-0009 / task G19.2): detonates + reverts techniques against a
+# live, ephemeral AWS account — the source of truth for AWS semantics — then runs the orphaned-
+# resource leak detector. Runs only on manual dispatch / release, and only when the repo variable
+# AKUMO_LIVE_AWS is "true" and the `live-aws` environment (holding scoped, short-lived credentials)
+# is configured. It never runs on PRs.
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: live-aws
+  cancel-in-progress: false
+
+jobs:
+  live-aws:
+    name: live detonate + revert + leak detector
+    runs-on: ubuntu-latest
+    if: ${{ vars.AKUMO_LIVE_AWS == 'true' }}
+    environment: live-aws # gated: holds AWS_ROLE_ARN / region; approvals as configured
+    permissions:
+      id-token: write # for OIDC role assumption
+      contents: read
+    defaults:
+      run:
+        working-directory: code
+    env:
+      AKUMO_STATE_DIR: ${{ github.workspace }}/.akumo-state
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: code
+
+      - name: Configure AWS credentials (short-lived, via OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AKUMO_LIVE_AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AKUMO_LIVE_AWS_REGION }}
+
+      # The live-AWS integration suite is opt-in via a feature so it never runs in the fast tier.
+      # (Wired in a follow-up: gate the live tests behind `--features live-aws`.)
+      - name: Live detonate + revert suite
+        run: cargo test -p akumo-provider-aws -- --ignored --nocapture
+
+      # Backstop: fail the run if any detonation was left unreverted (orphaned resources).
+      - name: Orphaned-resource leak detector
+        if: ${{ always() }}
+        run: cargo run -p xtask -- leak-detector "${AKUMO_STATE_DIR}"

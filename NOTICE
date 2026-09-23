@@ -1,0 +1,13 @@
+Akumo — Cloud offensive security framework
+Copyright (c) the Akumo authors.
+
+Licensed under the terms in the LICENSE file at the root of this repository.
+
+ETHICS & AUTHORIZED USE
+-----------------------
+Akumo is intended solely for testing infrastructure the operator is authorized to test:
+owned accounts, contracted engagements, and lab/CTF environments. Authorization gating,
+scope enforcement, reversibility, and auditability are enforced requirements, not optional
+features (see spec/requirements.md §3 and spec/Analysis.md §11). Use against systems you do
+not own or have explicit written permission to test may be illegal. The authors accept no
+liability for misuse.

@@ -1,0 +1,85 @@
+name: CI (fast tier)
+
+# Fast tier — runs on every push/PR. Deterministic, cloud-free: builds, tests against the Mock
+# provider, and enforces the release-blocking dependency-direction lint (NFR-EXT1). The live-AWS
+# fidelity tier is a separate, release-gated workflow (see ci-live-aws.yml, filled in by G19.2).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: "-D warnings"
+
+jobs:
+  build-test:
+    name: build · test · lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: code
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain (pinned by rust-toolchain.toml)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: code
+
+      - name: Format check
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+      - name: Build
+        run: cargo build --workspace --all-targets
+
+      - name: Test (fast tier — Mock provider, no cloud)
+        run: cargo test --workspace
+
+      - name: Dependency-direction lint (release-blocking, NFR-EXT1)
+        run: cargo run -p xtask -- dep-lint
+
+  deny:
+    name: cargo-deny (bans · sources)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Deterministic checks only. `licenses` and `advisories` need the dependency tree curated
+      # first (the AWS SDK pulls a large tree, e.g. `ring`'s composite license), so they run
+      # informationally until the allowlist/ignore set is reviewed.
+      - name: cargo-deny (bans, sources)
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          manifest-path: code/Cargo.toml
+          command: check bans sources
+      - name: cargo-deny (licenses, advisories — informational)
+        continue-on-error: true
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          manifest-path: code/Cargo.toml
+          command: check licenses advisories
+
+  docs-links:
+    name: docs link check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Markdown link check
+        uses: gaurav-nelson/github-action-markdown-link-check@v1
+        with:
+          use-quiet-mode: "yes"
+          config-file: .github/markdown-link-check.json

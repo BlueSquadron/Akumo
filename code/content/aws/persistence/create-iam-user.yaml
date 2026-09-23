@@ -1,0 +1,41 @@
+metadata:
+  id: aws.iam.persistence.create-user
+  name: Create IAM User
+  description: >-
+    Create a new IAM user as a durable foothold (cloud account creation for
+    persistence).
+  author: Akumo
+  version: "1.0.0"
+  provider: aws
+  mitre: ["T1136.003"]
+  references:
+    - "https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html"
+  impact: mutating-reversible
+  expected_telemetry:
+    - source: cloudtrail
+      event_name: CreateUser
+      fields:
+        eventSource: iam.amazonaws.com
+
+contract:
+  inputs:
+    - name: user_name
+      type: string
+      required: true
+  preconditions:
+    - predicate: { name: has_permission, args: ["$foothold", "iam:CreateUser"] }
+      min_status: proven
+  effects:
+    - predicate: { name: exists_principal, args: ["$user_name"] }
+
+steps:
+  - id: create-user
+    body:
+      type: call
+      service: iam
+      operation: CreateUser
+      params: { UserName: "$user_name" }
+    revert:
+      service: iam
+      operation: DeleteUser
+      params: { UserName: "$user_name" }

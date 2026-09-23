@@ -1,0 +1,52 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/akumo-domain",
+    "crates/akumo-core",
+    "crates/akumo-dsl",
+    "crates/akumo-ledger",
+    "crates/akumo-provider-mock",
+    "crates/akumo-provider-aws",
+    "crates/akumo-content",
+    "crates/akumo-cli",
+    "bin/akumo",
+    "xtask",
+]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.79"
+license = "Apache-2.0"
+repository = "https://github.com/Shenril/Akumo"
+authors = ["The Akumo authors"]
+
+# Shared dependency versions. Member crates opt in with `dep = { workspace = true }`.
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+thiserror = "1"
+async-trait = "0.1"
+sha2 = "0.10"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
+tracing = "0.1"
+clap = { version = "4", features = ["derive"] }
+
+# Internal crates (path-based; version tracks the workspace).
+akumo-domain = { path = "crates/akumo-domain" }
+akumo-core = { path = "crates/akumo-core" }
+akumo-dsl = { path = "crates/akumo-dsl" }
+akumo-ledger = { path = "crates/akumo-ledger" }
+akumo-provider-mock = { path = "crates/akumo-provider-mock" }
+akumo-provider-aws = { path = "crates/akumo-provider-aws" }
+akumo-content = { path = "crates/akumo-content" }
+akumo-cli = { path = "crates/akumo-cli" }
+
+[profile.release]
+# Single static binary goals (ADR-0003): optimize for size/speed, strip symbols.
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+panic = "abort"

@@ -1,0 +1,25 @@
+[package]
+name = "akumo-provider-aws"
+description = "AWS Provider Port adapter. The AWS SDK lives ONLY here, behind the seam (ADR-0002)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+akumo-domain = { workspace = true }
+async-trait = { workspace = true }
+serde_json = { workspace = true }
+# AWS SDK — confined to this crate. The dependency-direction lint fails the build if the core ever
+# gains these (NFR-EXT1). Pinned to the 1.x GA line.
+aws-config = "1"
+aws-sdk-sts = "1"
+aws-sdk-iam = "1"
+
+[dev-dependencies]
+tokio = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

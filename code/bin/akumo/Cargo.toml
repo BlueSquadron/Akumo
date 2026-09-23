@@ -1,0 +1,19 @@
+[package]
+name = "akumo"
+description = "Akumo — the single-binary entrypoint that wires driving/driven adapters into the core."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "akumo"
+path = "src/main.rs"
+
+[dependencies]
+akumo-cli = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

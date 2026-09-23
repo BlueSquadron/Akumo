@@ -1,0 +1,23 @@
+[package]
+name = "akumo-cli"
+description = "Driving adapters: the command-per-invocation CLI and the optional interactive shell (ADR-0029)."
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+akumo-domain = { workspace = true }
+akumo-core = { workspace = true }
+akumo-dsl = { workspace = true }
+akumo-ledger = { workspace = true }
+akumo-provider-mock = { workspace = true }
+akumo-provider-aws = { workspace = true }
+clap = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+
+[lints.rust]
+unsafe_code = "forbid"

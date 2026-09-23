@@ -1,0 +1,44 @@
+metadata:
+  id: aws.iam.persistence.create-access-key
+  name: Create IAM Access Key
+  description: >-
+    Create a long-term access key for an IAM user to establish or maintain
+    programmatic access (persistence / account manipulation).
+  author: Akumo
+  version: "1.0.0"
+  provider: aws
+  mitre: ["T1098"]
+  references:
+    - "https://aws-samples.github.io/threat-technique-catalog-for-aws/matrix.html"
+  impact: mutating-reversible
+  expected_telemetry:
+    - source: cloudtrail
+      event_name: CreateAccessKey
+      fields:
+        eventSource: iam.amazonaws.com
+
+contract:
+  inputs:
+    - name: user
+      type: principal
+      required: true
+  preconditions:
+    - predicate: { name: has_permission, args: ["$foothold", "iam:CreateAccessKey"] }
+      min_status: proven
+  effects:
+    - predicate: { name: has_credential, args: ["$user", "new-access-key"] }
+
+steps:
+  - id: create-key
+    body:
+      type: call
+      service: iam
+      operation: CreateAccessKey
+      params: { UserName: "$user" }
+    bind:
+      - name: key_id
+        from: result.AccessKeyId
+    revert:
+      service: iam
+      operation: DeleteAccessKey
+      params: { UserName: "$user", AccessKeyId: "$key_id" }
