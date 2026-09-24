@@ -6,22 +6,21 @@
 
 ### 悪雲 — offense-minded security for the cloud
 
-**A multi-cloud-ready, attack-graph-native offensive framework that unifies _discovery_, _attack-path reasoning_, and _safe execution_ into one loop.**
+**A multi-cloud-ready, attack-graph-native offensive framework that unifies _discovery_, _attack-path reasoning_, and _safe execution_ into one loop. v1 targets AWS behind a provider-neutral core.**
 
 <br/>
 
 [![CI](https://img.shields.io/github/actions/workflow/status/BlueSquadron/Akumo/ci.yml?branch=main&label=CI&logo=github)](https://github.com/BlueSquadron/Akumo/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/BlueSquadron/Akumo?display_name=tag&color=6E56CF&label=release)](https://github.com/BlueSquadron/Akumo/releases)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-[![Rust](https://img.shields.io/badge/built_with-Rust-CE422B?logo=rust&logoColor=white)](https://www.rust-lang.org)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+[![Built with Rust](https://img.shields.io/badge/built_with-Rust-CE422B?logo=rust&logoColor=white)](https://www.rust-lang.org)
 [![Platforms](https://img.shields.io/badge/platforms-Linux%20%7C%20macOS-informational)](#-install)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE-ATT%26CK%20aligned-red)](https://attack.mitre.org/matrices/enterprise/cloud/)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-<a href="#-quickstart"><b>Quickstart</b></a> ·
-<a href="#-demo"><b>Demo</b></a> ·
+<a href="#-quickstart-mock-provider"><b>Quickstart</b></a> ·
 <a href="docs/external/"><b>Write techniques</b></a> ·
 <a href="#-how-it-works"><b>How it works</b></a> ·
+<a href="#-status"><b>Status</b></a> ·
 <a href="#️-roadmap"><b>Roadmap</b></a>
 
 </div>
@@ -37,9 +36,8 @@
 your side. Today's operator stitches four tools together by hand: a scanner finds misconfigurations,
 a path-enumerator surfaces routes, an exploitation framework acts, and a detonation tool validates
 detections — across four incompatible data models. **Akumo closes that seam**: it enumerates the
-_real_ target into an attack graph, computes _explainable_ paths toward an objective, and **safely
-executes** them with automatic revert — emitting, for every action, its purple-team detection
-signature.
+target into an attack graph, computes _explainable_ paths toward an objective, and **safely executes**
+them with automatic revert — emitting, for every action, its purple-team detection signature.
 
 ---
 
@@ -48,12 +46,12 @@ signature.
 - [Why Akumo](#-why-akumo)
 - [Features](#-features)
 - [Install](#-install)
-- [Quickstart](#-quickstart)
-- [Demo](#-demo)
+- [Quickstart (Mock provider)](#-quickstart-mock-provider)
 - [How it works](#-how-it-works)
 - [Writing techniques](#️-writing-techniques)
 - [Safety model](#️-safety-model)
 - [How Akumo compares](#-how-akumo-compares)
+- [Status](#-status)
 - [Documentation](#-documentation)
 - [Roadmap](#️-roadmap)
 - [Contributing](#-contributing) · [Security](#-security) · [License](#-license)
@@ -70,8 +68,8 @@ The cloud-offense field splits into quadrants — and almost every tool does **o
 | **Offensive / action**  | CloudFox (finds paths, stops)  | Pacu (AWS), Stratus (synthetic) |
 
 The seam between **"discover a real path"** and **"safely execute it against the real environment"**
-is where the field is weakest — and where Akumo lives. It takes the best pattern from each and
-unifies them behind **one data model** and **one safety guarantee**.
+is where the field is weakest — and where Akumo lives. It takes the best pattern from each and unifies
+them behind **one data model** and **one safety guarantee**.
 
 ---
 
@@ -79,100 +77,83 @@ unifies them behind **one data model** and **one safety guarantee**.
 
 - 🧭 **Attack-graph-native.** Models the environment as an identity + resource + trust graph and
   **computes** ranked, reachable privesc/lateral paths — it doesn't just run hand-authored scripts.
-- 🎯 **Objective-seeking.** State a goal (_"reach admin"_, _"reach this resource"_); Akumo finds and
-  explains the path — every hop annotated with the enabling permission and its certainty.
-- 🛟 **Safe by construction.** Dry-run + blast-radius preview, impact-gated consent, and a
-  **transactional saga revert** that undoes only what happened — restart-safe, on real targets.
-- 🧾 **Declarative, testable techniques.** YAML + a safe expression language (CEL-aligned), MITRE-
-  mapped, with a **mandatory, tested revert contract**. Escape to Starlark/WASM per-step when needed.
-- 🕵️ **Purple-team dual output.** Every action ships its **expected telemetry** as a Sigma-aligned
-  candidate detection — offense that teaches defense.
-- 🧱 **Provider-neutral core, AWS today.** A single provider seam; AWS is the first adapter, the Mock
-  is the second — proving new providers are _additive, never a rewrite_ (CI-enforced).
-- 📜 **Evidence-grade.** An append-only, **hash-chained** ledger is the single source of truth;
-  reports (Markdown/JSON) and STIX / MITRE Attack Flow exports are folded from it.
-- 📦 **Single static binary.** One low-friction executable; interactive CLI **and** an optional shell
-  **and** a CI-native non-interactive mode.
+- 🎯 **Objective-seeking.** State a goal (_reach admin_, _reach a resource_); Akumo finds and explains
+  the path — every hop annotated with the enabling permission and its epistemic status.
+- 🛟 **Safe by construction.** Static dry-run + blast-radius preview, impact-gated consent, and a
+  **transactional saga revert** that undoes only what happened — restart-safe.
+- 🧾 **Declarative, testable techniques.** YAML + a safe, self-contained expression language
+  (CEL-aligned), MITRE-mapped, with a **mandatory, tested revert contract**. A per-step escape-hatch
+  **seam** for Starlark/WASM is in place (the runtimes themselves are on the [roadmap](#️-roadmap)).
+- 🕵️ **Purple-team dual output.** Every technique carries its **expected telemetry**, generated as a
+  Sigma-aligned candidate detection — offense that teaches defense.
+- 🧱 **Provider-neutral core.** A single provider seam; **AWS** is the first adapter and a built-in
+  **Mock** is the second — proving new providers are _additive, never a rewrite_ (CI-enforced).
+- 📜 **Evidence-grade.** An append-only, **hash-chained** ledger is the single source of truth; reports
+  (Markdown / JSON) and STIX / MITRE Attack Flow exports are folded from it.
+- 💻 **One binary, three modes.** An interactive CLI, an optional shell, and a non-interactive mode for
+  CI — all over the same persistent ledger.
 
 ---
 
 ## 🧰 Install
 
+There are **no published packages or release binaries yet** — build from source (Rust stable):
+
 ```bash
-# Homebrew (tap)
-brew install BlueSquadron/akumo/akumo
-
-# Docker
-docker run --rm ghcr.io/bluesquadron/akumo:latest --help
-
-# From source (Rust stable)
 git clone https://github.com/BlueSquadron/Akumo && cd Akumo/code
-cargo build --release && ./target/release/akumo --version
+cargo build --release
+./target/release/akumo --version
 ```
 
-Prebuilt, signed binaries for Linux & macOS are attached to every [release](https://github.com/BlueSquadron/Akumo/releases).
+A container image can be built from the included `Dockerfile`:
+
+```bash
+docker build -t akumo:dev .
+docker run --rm akumo:dev --help
+```
+
+> Signed static binaries (Linux/macOS) and a GHCR container image are produced by the release workflow
+> (`.github/workflows/release.yml`) **when a release is tagged** — none has been published yet.
 
 ---
 
-## 🚀 Quickstart
+## 🚀 Quickstart (Mock provider)
+
+The default `--provider mock` is a built-in, cloud-free practice target — no credentials required.
+These commands run as shown against a fresh build (from the repo root, using the built binary):
 
 ```console
-# 1. Who am I, and where can I operate?  (no changes, no enumeration)
 $ akumo authcheck
-principal: arn:aws:iam::123456789012:user/pentester
-provider:  aws
-regions:   us-east-1
+principal: arn:aws:iam::000000000000:user/akumo-operator
+provider:  mock
+regions:   mock-region-1
 
-# 2. Open an authorized, scoped engagement  (the affirmation is recorded)
-$ akumo engagement open --id acme-q3 --scope account:123456789012 --affirm
-opened engagement acme-q3
+$ akumo engagement open --id demo --scope account:123456789012 --affirm
+opened engagement demo
 
-# 3. Enumerate the target into the attack graph
-$ akumo enumerate --engagement acme-q3 --descriptor iam.ListUsers --descriptor iam.ListRoles
-enumerated 2 descriptor(s): 214 facts, 3 coverage gap(s)
+$ akumo catalog --content code/content
+aws.cloudtrail.defense-evasion.stop-logging  [mutating-reversible]  aws  — Stop CloudTrail Logging
+aws.iam.persistence.create-access-key  [mutating-reversible]  aws  — Create IAM Access Key
+aws.iam.persistence.create-user  [mutating-reversible]  aws  — Create IAM User
+aws.iam.persistence.create-login-profile  [mutating-reversible]  aws  — Create Console Login Profile
+aws.iam.privesc.attach-user-policy  [mutating-reversible]  aws  — Attach Managed Policy to User
+
+$ akumo preview --engagement demo \
+    --technique aws.iam.persistence.create-access-key \
+    --content code/content --input user=alice
+technique:    aws.iam.persistence.create-access-key
+impact:       mutating-reversible (reversible: true)
+provider calls: iam.CreateAccessKey
+effects:      has_credential($user, new-access-key)
 ```
 
-Start on `--provider mock` (a built-in practice target) before pointing at real AWS.
+`akumo technique --id <id> --content code/content` prints a technique's metadata **and** its generated
+Sigma candidate detection. `akumo shell` layers the same commands over the persistent ledger.
 
----
-
-## 🎬 Demo
-
-A representative engagement — from a foothold to admin, executed and reverted, output shape matches
-the real CLI:
-
-```console
-$ akumo paths --engagement acme-q3 --objective admin
---- path 1 ---
-1. arn:…:user/pentester --[can-assume: sts:AssumeRole]--> control arn:…:role/ci-deploy (Proven)
-2. arn:…:role/ci-deploy --[technique aws.iam.privesc.attach-user-policy]--> control arn:…:role/admin (Proven)
-confidence: Proven · reversible: true · max impact: mutating-reversible
-
-$ akumo preview --engagement acme-q3 --technique aws.iam.privesc.attach-user-policy --input user=ci-deploy
-technique:      aws.iam.privesc.attach-user-policy
-impact:         mutating-reversible (reversible: true)
-provider calls: iam.AttachUserPolicy
-effects:        has_permission(ci-deploy, AdministratorAccess)
-
-$ akumo run --engagement acme-q3 --technique aws.iam.privesc.attach-user-policy --input user=ci-deploy --consent
-status: Completed — 1 step(s) detonated, 1 verified
-
-$ akumo revert --engagement acme-q3
-reverted 1 step(s); 0 could not be undone
-
-$ akumo report --engagement acme-q3 --format md | head -n 12
-# Akumo Engagement Report — acme-q3
-## Executive summary
-- Provider: aws
-- Status: open
-- Attack paths computed: 1
-- Techniques exercised: 1
-- Steps detonated / reverted: 1 / 1
-- MITRE ATT&CK coverage: T1098
-```
-
-> An optional interactive shell (`akumo shell`) layers the same commands over the persistent ledger —
-> no session state to lose.
+> **The full loop** — `enumerate → plan → execute → verify → revert → report` — is exercised
+> end-to-end by the test suite against the Mock (`cargo test -p akumo-core`). Executing it against a
+> real target requires the AWS provider and credentials; see [Status](#-status) for exactly what the
+> AWS adapter implements today.
 
 ---
 
@@ -197,8 +178,8 @@ flowchart LR
     class I,J out;
 ```
 
-Everything is recorded to an append-only, hash-chained **event ledger** — the graph, execution
-status, loot, and reports are all deterministic projections of it. The design is **hexagonal**: a
+Everything is recorded to an append-only, hash-chained **event ledger** — the graph, execution status,
+loot, and reports are all deterministic projections of it. The design is **hexagonal**: a
 provider-blind core, adapters at the edges.
 
 ```mermaid
@@ -223,16 +204,16 @@ flowchart TB
     class ENG,GRAPH,PLAN,EXEC,REP core;
 ```
 
-The core depends only on **ports**; the AWS SDK lives solely in the AWS adapter — a lint fails CI if
-that ever leaks. Read the full design under [`docs/internal/`](docs/internal/) and the decision log
-in [`spec/ADR/`](spec/ADR/).
+The core depends only on **ports**; the AWS SDK lives solely in the AWS adapter — a lint
+(`cargo run -p xtask -- dep-lint`) fails CI if that ever leaks. Full design under
+[`docs/internal/`](docs/internal/); decision log in [`spec/ADR/`](spec/ADR/).
 
 ---
 
 ## ✍️ Writing techniques
 
 Techniques are **data, not code you must trust** — declarative YAML, versioned, validated, always with
-a revert:
+a revert. This is a real technique shipped in [`code/content/`](code/content/):
 
 ```yaml
 metadata:
@@ -253,9 +234,8 @@ steps:
 ```
 
 The **contract** (preconditions/effects) is what lets the planner chain your technique into an attack
-path automatically. Learn it step by step in the **progressive guide**:
-[**Getting Started → Advanced**](docs/external/) (install → run → author → CEL → chaining → revert →
-Starlark/WASM → detections → bundles).
+path automatically. Learn it step by step in the **progressive guide**,
+[Getting Started → Advanced](docs/external/).
 
 ---
 
@@ -270,13 +250,18 @@ Starlark/WASM → detections → bundles).
 | **Honest under partial access** | "unknown ≠ absent" — blind spots are recorded, uncertain paths labeled, never hidden |
 | **Evidence-grade** | append-only, **hash-chained**, tamper-evident ledger; reproducible reports |
 
+Each of these is a release-blocking, tested gate (`akumo-core::gates`).
+
 ---
 
 ## 📊 How Akumo compares
 
-| Capability | Pacu | Stratus | CloudFox | **Akumo** |
+A capability-presence comparison, summarized from the prior-art analysis in
+[`spec/Analysis.md`](spec/Analysis.md):
+
+| Capability | Pacu | Stratus | CloudFox | **Akumo v1** |
 |---|:--:|:--:|:--:|:--:|
-| Executes real attacks | ✅ | ⚠️ synthetic | ❌ | ✅ |
+| Executes real attacks | ✅ | ⚠️ synthetic | ❌ | ✅ &nbsp;<sup>†</sup> |
 | Attack-path discovery | ❌ | ❌ | ✅ | ✅ |
 | Objective-seeking | ❌ | ❌ | ❌ | ✅ |
 | Safe revert / rollback | ❌ | ✅ | n/a | ✅ (real targets) |
@@ -284,7 +269,26 @@ Starlark/WASM → detections → bundles).
 | Declarative, tested content | ❌ | ⚠️ Go | ❌ | ✅ YAML+CEL |
 | Single binary | ❌ Py | ✅ | ✅ | ✅ Rust |
 
-<sub>Summarized from the prior-art analysis in [`spec/Analysis.md`](spec/Analysis.md).</sub>
+<sup>†</sup> The mechanism is complete; the shipped AWS **technique/action coverage is a starter set**
+(see [Status](#-status)) and grows additively behind the seam.
+
+---
+
+## 📋 Status
+
+Akumo v1 is feature-complete for its scope; coverage is deliberately a **starter set** you extend.
+
+- ✅ **Implemented:** provider-neutral core; event-sourced ledger; enumeration → attack graph;
+  deterministic planner (reach-admin / reach-resource); YAML+CEL technique model with saga revert;
+  Sigma detection generation; reports + STIX/Attack Flow export; CLI + shell; **Mock** provider; and
+  an **AWS** adapter covering **STS identity, IAM user/role enumeration, and the
+  create/delete-access-key action pair**.
+- 🌱 **Starter content:** 5 reversible AWS techniques across persistence / privesc / defense-evasion.
+- 🚧 **Not yet wired (see [Roadmap](#️-roadmap)):** Starlark/WASM escape-hatch runtimes (seam only);
+  broader AWS action coverage; live-AWS integration tier (release-gated); published packages.
+
+What "done" means, with the test proving each capability, is in
+[`docs/internal/22-v1-done.md`](docs/internal/22-v1-done.md).
 
 ---
 
@@ -295,18 +299,18 @@ Starlark/WASM → detections → bundles).
 | 🧑‍💻 **Operators & authors** | [`docs/external/`](docs/external/) — a beginner→advanced ladder |
 | 🛠️ **Contributors & maintainers** | [`docs/internal/`](docs/internal/) — architecture → components → testing |
 | 🧩 **Design & decisions** | [`spec/`](spec/) — analysis, requirements, specification, and 31 ADRs |
-| ✅ **What "done" means** | [`docs/internal/22-v1-done.md`](docs/internal/22-v1-done.md) |
 
 ---
 
 ## 🗺️ Roadmap
 
-**v1 (this release):** AWS provider · attack graph + deterministic planner · safe execution + saga
-revert · YAML+CEL techniques · Sigma detections · reports + STIX export · CLI + shell.
+**v1 (current):** AWS adapter (starter set) · attack graph + deterministic planner · safe execution +
+saga revert · YAML+CEL techniques · Sigma detections · reports + STIX export · CLI + shell.
 
-**v2 (tracked in [`spec/V2_BACKLOG.md`](spec/V2_BACKLOG.md)):** Azure / GCP / Kubernetes adapters ·
-identity-plane & cross-provider paths · AI-assisted planner (advisory, human-gated) · live telemetry
-correlation · external posture ingestion · attack-graph visualization.
+**v2 (tracked in [`spec/V2_BACKLOG.md`](spec/V2_BACKLOG.md)):** Starlark/WASM escape-hatch runtimes ·
+broader AWS coverage + Azure / GCP / Kubernetes adapters · identity-plane & cross-provider paths ·
+AI-assisted planner (advisory, human-gated) · live telemetry correlation · external posture ingestion
+· attack-graph visualization · published packages (Homebrew, container registry, prebuilt binaries).
 
 ---
 
@@ -323,7 +327,7 @@ disclosure). Do not use Akumo against systems you aren't authorized to test.
 
 ## 📜 License
 
-Licensed under [Apache-2.0](LICENSE).
+Licensed under the **GNU General Public License v3.0** — see [`LICENSE`](LICENSE).
 
 ## 🙏 Acknowledgements
 
@@ -333,4 +337,4 @@ Akumo stands on the shoulders of the field — **Pacu** (Rhino Security Labs), *
 Classification aligns to [MITRE ATT&CK](https://attack.mitre.org/matrices/enterprise/cloud/); chains
 export to [MITRE Attack Flow](https://ctid.mitre.org/projects/attack-flow/).
 
-<div align="center"><sub>Built with 🦀 and a healthy respect for blast radius. If Akumo is useful, consider giving it a ⭐.</sub></div>
+<div align="center"><sub>Built with 🦀 and a healthy respect for blast radius.</sub></div>
