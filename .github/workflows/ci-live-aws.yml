@@ -30,7 +30,7 @@ jobs:
     env:
       AKUMO_STATE_DIR: ${{ github.workspace }}/.akumo-state
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -39,7 +39,7 @@ jobs:
           workspaces: code
 
       - name: Configure AWS credentials (short-lived, via OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AKUMO_LIVE_AWS_ROLE_ARN }}
           aws-region: ${{ vars.AKUMO_LIVE_AWS_REGION }}
