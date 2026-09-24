@@ -1,17 +1,21 @@
 version: 2
 updates:
-  # Rust dependencies (the Cargo workspace lives under code/).
+  # Rust dependencies (the Cargo workspace lives under code/). One grouped PR to avoid noise.
   - package-ecosystem: cargo
     directory: /code
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     groups:
-      aws-sdk:
-        patterns: ["aws-*"]
+      cargo:
+        patterns: ["*"]
 
-  # GitHub Actions used by the workflows.
+  # GitHub Actions used by the workflows. One grouped PR.
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: weekly
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ["*"]

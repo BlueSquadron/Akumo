@@ -46,12 +46,16 @@ fn mock() -> MockProvider {
         .action(
             "iam",
             "CreateAccessKey",
-            akumo_domain::seam::ActionResult { raw: serde_json::json!({ "AccessKeyId": "AKIA" }) },
+            akumo_domain::seam::ActionResult {
+                raw: serde_json::json!({ "AccessKeyId": "AKIA" }),
+            },
         )
         .action(
             "iam",
             "DeleteAccessKey",
-            akumo_domain::seam::ActionResult { raw: serde_json::json!({}) },
+            akumo_domain::seam::ActionResult {
+                raw: serde_json::json!({}),
+            },
         )
         .build(),
     )
@@ -104,7 +108,10 @@ async fn gate_scope_refuses_out_of_scope() {
     open(&store, &id).await;
     let ctx = EngagementManager::new(&store).context(&id).await.unwrap();
     ctx.ensure_in_scope("account", "1").unwrap();
-    assert!(ctx.ensure_in_scope("account", "999").is_err(), "out-of-scope must be refused");
+    assert!(
+        ctx.ensure_in_scope("account", "999").is_err(),
+        "out-of-scope must be refused"
+    );
 }
 
 /// GATE: after the kill-switch, execution is halted (FR-A4).
@@ -117,11 +124,20 @@ async fn gate_kill_switch_halts_execution() {
     let id = EngagementId::new("eng");
     open(&store, &id).await;
 
-    akumo.kill_switch(&id, Actor::new("op"), "abort").await.unwrap();
+    akumo
+        .kill_switch(&id, Actor::new("op"), "abort")
+        .await
+        .unwrap();
 
     let technique = parse_technique(CREATE_KEY).unwrap();
     let result = akumo
-        .run(&id, Actor::new("op"), &technique, &serde_json::Map::new(), Default::default())
+        .run(
+            &id,
+            Actor::new("op"),
+            &technique,
+            &serde_json::Map::new(),
+            Default::default(),
+        )
         .await;
     assert!(result.is_err(), "a killed engagement must refuse execution");
 }
@@ -138,11 +154,20 @@ async fn gate_consent_required_before_mutation() {
 
     let technique = parse_technique(CREATE_KEY).unwrap();
     let outcome = akumo
-        .run(&id, Actor::new("op"), &technique, &serde_json::Map::new(), Default::default())
+        .run(
+            &id,
+            Actor::new("op"),
+            &technique,
+            &serde_json::Map::new(),
+            Default::default(),
+        )
         .await
         .unwrap();
     assert_eq!(outcome.status, ExecStatus::ConsentRequired);
-    assert_eq!(outcome.steps_detonated, 0, "nothing may detonate without consent");
+    assert_eq!(
+        outcome.steps_detonated, 0,
+        "nothing may detonate without consent"
+    );
 }
 
 /// GATE: revert restores after a mutating detonation (NFR-SAF2).
@@ -161,7 +186,13 @@ async fn gate_revert_restores() {
 
     let technique = parse_technique(CREATE_KEY).unwrap();
     let outcome = akumo
-        .run(&id, Actor::new("op"), &technique, &serde_json::Map::new(), Default::default())
+        .run(
+            &id,
+            Actor::new("op"),
+            &technique,
+            &serde_json::Map::new(),
+            Default::default(),
+        )
         .await
         .unwrap();
     assert_eq!(outcome.status, ExecStatus::Completed);

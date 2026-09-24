@@ -74,11 +74,15 @@ impl ActionExecutor for MockProvider {
         let key = descriptor.key();
         // Host-brokering (NFR-SEC5): the step may only invoke capabilities it was granted.
         if !grant.permits(&key) {
-            return Err(AkumoError::AccessDenied(format!("capability not granted: {key}")));
+            return Err(AkumoError::AccessDenied(format!(
+                "capability not granted: {key}"
+            )));
         }
         match self.env.actions.get(&key) {
             Some(result) => Ok(result.clone()),
-            None => Err(AkumoError::NotFound(format!("no scripted action for {key}"))),
+            None => Err(AkumoError::NotFound(format!(
+                "no scripted action for {key}"
+            ))),
         }
     }
 }
@@ -161,10 +165,20 @@ mod tests {
             .enumeration(
                 "iam",
                 "ListPrincipals",
-                vec![node("arn:foothold"), node("arn:admin"), edge("arn:foothold", "arn:admin")],
+                vec![
+                    node("arn:foothold"),
+                    node("arn:admin"),
+                    edge("arn:foothold", "arn:admin"),
+                ],
             )
             .denied_enumeration("kms", "ListKeys", "access denied: kms:ListKeys")
-            .action("iam", "CreateAccessKey", ActionResult { raw: serde_json::json!({ "ok": true }) })
+            .action(
+                "iam",
+                "CreateAccessKey",
+                ActionResult {
+                    raw: serde_json::json!({ "ok": true }),
+                },
+            )
             .build()
     }
 
@@ -215,10 +229,14 @@ mod tests {
 
         // Without a grant: refused (host-brokering).
         let ungranted = CapabilityGrant::default();
-        assert!(ActionExecutor::execute(&p, &desc, &ungranted).await.is_err());
+        assert!(ActionExecutor::execute(&p, &desc, &ungranted)
+            .await
+            .is_err());
 
         // With the grant: executes.
-        let granted = CapabilityGrant { allowed: vec!["iam.CreateAccessKey".into()] };
+        let granted = CapabilityGrant {
+            allowed: vec!["iam.CreateAccessKey".into()],
+        };
         let result = ActionExecutor::execute(&p, &desc, &granted).await.unwrap();
         assert_eq!(result.raw["ok"], true);
     }

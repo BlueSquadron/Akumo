@@ -24,10 +24,10 @@
 pub mod api;
 pub mod chain;
 pub mod engagement;
-#[cfg(test)]
-mod gates;
 pub mod enumeration;
 pub mod execution;
+#[cfg(test)]
+mod gates;
 pub mod graph;
 pub mod journal;
 pub mod planner;

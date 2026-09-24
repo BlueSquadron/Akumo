@@ -150,7 +150,9 @@ pub fn verifying_key_from_hex(hex: &str) -> Result<VerifyingKey> {
 
 fn from_hex(hex: &str) -> Result<Vec<u8>> {
     if hex.len() % 2 != 0 {
-        return Err(AkumoError::Validation("hex string has odd length".to_string()));
+        return Err(AkumoError::Validation(
+            "hex string has odd length".to_string(),
+        ));
     }
     (0..hex.len())
         .step_by(2)
@@ -194,13 +196,25 @@ steps:
     #[test]
     fn sign_and_verify_roundtrip() {
         let technique = parse_technique(SAMPLE).unwrap();
-        let manifest = build_manifest("aws-default", "1.0.0", ">=0", std::slice::from_ref(&technique)).unwrap();
+        let manifest = build_manifest(
+            "aws-default",
+            "1.0.0",
+            ">=0",
+            std::slice::from_ref(&technique),
+        )
+        .unwrap();
         let signing_key = SigningKey::from_bytes(&[7u8; 32]);
         let verifying_key = signing_key.verifying_key();
 
         let signature = sign_manifest(&manifest, &signing_key).unwrap();
         verify_manifest(&manifest, &signature, &verifying_key).unwrap();
-        verify_bundle(&manifest, std::slice::from_ref(&technique), &signature, &verifying_key).unwrap();
+        verify_bundle(
+            &manifest,
+            std::slice::from_ref(&technique),
+            &signature,
+            &verifying_key,
+        )
+        .unwrap();
 
         // Key round-trips through hex.
         let vk = verifying_key_from_hex(&verifying_key_to_hex(&verifying_key)).unwrap();
@@ -210,7 +224,13 @@ steps:
     #[test]
     fn tampered_technique_fails_verification() {
         let technique = parse_technique(SAMPLE).unwrap();
-        let manifest = build_manifest("aws-default", "1.0.0", ">=0", std::slice::from_ref(&technique)).unwrap();
+        let manifest = build_manifest(
+            "aws-default",
+            "1.0.0",
+            ">=0",
+            std::slice::from_ref(&technique),
+        )
+        .unwrap();
         let signing_key = SigningKey::from_bytes(&[7u8; 32]);
         let verifying_key = signing_key.verifying_key();
         let signature = sign_manifest(&manifest, &signing_key).unwrap();
@@ -223,7 +243,13 @@ steps:
     #[test]
     fn wrong_key_fails_verification() {
         let technique = parse_technique(SAMPLE).unwrap();
-        let manifest = build_manifest("aws-default", "1.0.0", ">=0", std::slice::from_ref(&technique)).unwrap();
+        let manifest = build_manifest(
+            "aws-default",
+            "1.0.0",
+            ">=0",
+            std::slice::from_ref(&technique),
+        )
+        .unwrap();
         let signature = sign_manifest(&manifest, &SigningKey::from_bytes(&[7u8; 32])).unwrap();
         let other = SigningKey::from_bytes(&[9u8; 32]).verifying_key();
         assert!(verify_manifest(&manifest, &signature, &other).is_err());

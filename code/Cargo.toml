@@ -16,7 +16,7 @@ members = [
 [workspace.package]
 version = "1.0.0"
 edition = "2021"
-rust-version = "1.79"
+rust-version = "1.85"
 license = "Apache-2.0"
 repository = "https://github.com/Shenril/Akumo"
 authors = ["The Akumo authors"]
@@ -26,9 +26,9 @@ authors = ["The Akumo authors"]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
-thiserror = "1"
+thiserror = "2"
 async-trait = "0.1"
-sha2 = "0.10"
+sha2 = "0.11"
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "sync", "time"] }
 tracing = "0.1"
 clap = { version = "4", features = ["derive"] }

@@ -60,7 +60,10 @@ mod tests {
             Assertion::Node(node) => {
                 assert_eq!(node.id, "arn:aws:iam::1:user/alice");
                 assert_eq!(node.kind, NodeKind::Principal);
-                assert_eq!(node.attributes.get("iam_type").and_then(|v| v.as_str()), Some("user"));
+                assert_eq!(
+                    node.attributes.get("iam_type").and_then(|v| v.as_str()),
+                    Some("user")
+                );
             }
             _ => panic!("expected a node"),
         }
@@ -68,7 +71,9 @@ mod tests {
 
     #[test]
     fn empty_response_maps_to_nothing() {
-        let response = RawResponse { raw: serde_json::json!({}) };
+        let response = RawResponse {
+            raw: serde_json::json!({}),
+        };
         assert!(map_response(&response).is_empty());
     }
 }

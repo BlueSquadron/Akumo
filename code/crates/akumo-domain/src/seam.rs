@@ -101,7 +101,9 @@ mod tests {
 
     #[test]
     fn grant_permits_only_declared_capabilities() {
-        let grant = CapabilityGrant { allowed: vec!["aws.iam.ListUsers".into()] };
+        let grant = CapabilityGrant {
+            allowed: vec!["aws.iam.ListUsers".into()],
+        };
         assert!(grant.permits("aws.iam.ListUsers"));
         assert!(!grant.permits("aws.iam.CreateUser"));
         assert!(!CapabilityGrant::default().permits("anything"));

@@ -85,7 +85,11 @@ fn sigma_rule(technique: &Technique, sig: &ExpectedTelemetry) -> SigmaRule {
 
     SigmaRule {
         title: format!("{} — {}", technique.metadata.name, sig.event_name),
-        id: format!("akumo-{}-{}", slug(&technique.metadata.id), slug(&sig.event_name)),
+        id: format!(
+            "akumo-{}-{}",
+            slug(&technique.metadata.id),
+            slug(&sig.event_name)
+        ),
         status: "experimental".to_string(),
         description: technique.metadata.description.clone(),
         tags,
@@ -93,7 +97,10 @@ fn sigma_rule(technique: &Technique, sig: &ExpectedTelemetry) -> SigmaRule {
             product: Some(technique.metadata.provider.clone()),
             service: Some(sig.source.clone()),
         },
-        detection: SigmaDetection { selection, condition: "selection".to_string() },
+        detection: SigmaDetection {
+            selection,
+            condition: "selection".to_string(),
+        },
         level: level_for(technique.metadata.impact).to_string(),
     }
 }
@@ -109,7 +116,13 @@ fn level_for(impact: ImpactLevel) -> &'static str {
 
 fn slug(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
         .collect()
 }
 

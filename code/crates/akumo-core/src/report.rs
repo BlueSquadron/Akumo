@@ -156,7 +156,10 @@ impl EngagementReport {
     /// Human-readable Markdown with an executive summary and a technical detail view (FR-J5).
     pub fn to_markdown(&self) -> String {
         let mut md = String::new();
-        md.push_str(&format!("# Akumo Engagement Report — {}\n\n", self.engagement_id));
+        md.push_str(&format!(
+            "# Akumo Engagement Report — {}\n\n",
+            self.engagement_id
+        ));
 
         md.push_str("## Executive summary\n\n");
         md.push_str(&format!(
@@ -292,7 +295,13 @@ fn status_str(status: EngagementStatus) -> &'static str {
 
 fn slug(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
         .collect()
 }
 
@@ -308,8 +317,8 @@ mod tests {
     use akumo_domain::scope::{Scope, ScopeSelector};
     use akumo_domain::seam::ActionResult;
 
-    use akumo_dsl::{parse_technique, Catalog};
     use akumo_dsl::script::UnsupportedScriptHost;
+    use akumo_dsl::{parse_technique, Catalog};
     use akumo_ledger::FileEventStore;
     use akumo_provider_mock::{MockEnvironment, MockProvider};
 
@@ -358,8 +367,20 @@ steps:
                 "mock",
                 Principal::new("arn:op", PrincipalKind::Role, ProviderId::new("mock")),
             )
-            .action("iam", "CreateAccessKey", ActionResult { raw: serde_json::json!({}) })
-            .action("iam", "DeleteAccessKey", ActionResult { raw: serde_json::json!({}) })
+            .action(
+                "iam",
+                "CreateAccessKey",
+                ActionResult {
+                    raw: serde_json::json!({}),
+                },
+            )
+            .action(
+                "iam",
+                "DeleteAccessKey",
+                ActionResult {
+                    raw: serde_json::json!({}),
+                },
+            )
             .build(),
         );
         let host = UnsupportedScriptHost;
@@ -376,9 +397,15 @@ steps:
         )
         .await
         .unwrap();
-        mgr.record_consent(&id, Actor::new("op"), ImpactLevel::MutatingReversible, true, None)
-            .await
-            .unwrap();
+        mgr.record_consent(
+            &id,
+            Actor::new("op"),
+            ImpactLevel::MutatingReversible,
+            true,
+            None,
+        )
+        .await
+        .unwrap();
 
         let technique = parse_technique(TECH).unwrap();
         ExecutionEngine::new(&store, &provider, &host)
@@ -399,7 +426,9 @@ steps:
         let report = build_report(&events, Some(&catalog));
         assert_eq!(report.status, "open");
         assert_eq!(report.provider.as_deref(), Some("mock"));
-        assert!(report.techniques_used.contains(&"aws.iam.create-access-key".to_string()));
+        assert!(report
+            .techniques_used
+            .contains(&"aws.iam.create-access-key".to_string()));
         assert_eq!(report.steps_detonated, 1);
         assert_eq!(report.mitre_coverage, vec!["T1098".to_string()]);
 

@@ -47,16 +47,23 @@ impl FileEventStore {
             if let Some(last) = events.last() {
                 heads.insert(
                     EngagementId::new(stem),
-                    ChainHead { seq: last.seq, hash: last.hash.clone() },
+                    ChainHead {
+                        seq: last.seq,
+                        hash: last.hash.clone(),
+                    },
                 );
             }
         }
 
-        Ok(Self { root, heads: Mutex::new(heads) })
+        Ok(Self {
+            root,
+            heads: Mutex::new(heads),
+        })
     }
 
     fn file_path(&self, engagement: &EngagementId) -> PathBuf {
-        self.root.join(format!("{}.jsonl", sanitize(engagement.as_str())))
+        self.root
+            .join(format!("{}.jsonl", sanitize(engagement.as_str())))
     }
 
     fn append_sync(&self, event: EventEnvelope) -> Result<()> {
@@ -93,7 +100,10 @@ impl FileEventStore {
 
         heads.insert(
             event.engagement_id.clone(),
-            ChainHead { seq: event.seq, hash: event.hash.clone() },
+            ChainHead {
+                seq: event.seq,
+                hash: event.hash.clone(),
+            },
         );
         Ok(())
     }
@@ -197,7 +207,13 @@ fn read_file(path: &Path) -> Result<Vec<EventEnvelope>> {
 /// Reduce an engagement id to a filesystem-safe file stem. v1 ids are id-like; this is defensive.
 fn sanitize(id: &str) -> String {
     id.chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
         .collect()
 }
 

@@ -255,7 +255,11 @@ impl Planner {
             }
 
             for (step_cost, succ) in expand(graph, actions, &node.state, config) {
-                heap.push(Reverse(SearchNode { cost: node.cost + step_cost, tie, state: succ }));
+                heap.push(Reverse(SearchNode {
+                    cost: node.cost + step_cost,
+                    tie,
+                    state: succ,
+                }));
                 tie += 1;
             }
         }
@@ -365,7 +369,12 @@ fn step_cost(preset: RankPreset, unproven: bool, detectability: u64, impact: Imp
 
 fn is_admin(graph: &AttackGraph, principal: &str, mode: PlanMode) -> bool {
     if let Some(node) = graph.node(principal) {
-        if node.attributes.get("admin").and_then(|v| v.as_bool()).unwrap_or(false) {
+        if node
+            .attributes
+            .get("admin")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+        {
             return true;
         }
     }
@@ -556,9 +565,15 @@ mod tests {
             &["f".to_string()],
             &Objective::ReachAdmin,
             &[],
-            &PlannerConfig { mode: PlanMode::StrictProven, ..PlannerConfig::default() },
+            &PlannerConfig {
+                mode: PlanMode::StrictProven,
+                ..PlannerConfig::default()
+            },
         );
-        assert!(strict.is_empty(), "strict mode must not use an unproven edge");
+        assert!(
+            strict.is_empty(),
+            "strict mode must not use an unproven edge"
+        );
 
         let honest = Planner::plan(
             &graph,
@@ -608,12 +623,16 @@ mod tests {
         let paths = Planner::plan(
             &graph,
             &["f".to_string()],
-            &Objective::ReachResource { resource: "r".to_string() },
+            &Objective::ReachResource {
+                resource: "r".to_string(),
+            },
             &[],
             &PlannerConfig::default(),
         );
         assert!(!paths.is_empty());
         assert_eq!(paths[0].len(), 1); // assume f->a; then a can-access r satisfies the goal
-        assert!(paths[0].explain().contains("can-access") || paths[0].explain().contains("can-assume"));
+        assert!(
+            paths[0].explain().contains("can-access") || paths[0].explain().contains("can-assume")
+        );
     }
 }

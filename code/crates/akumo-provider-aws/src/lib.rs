@@ -130,7 +130,9 @@ impl ResourceEnumerator for AwsProvider {
                         })
                     })
                     .collect();
-                Ok(RawResponse { raw: serde_json::json!({ "kind": "principals", "items": items }) })
+                Ok(RawResponse {
+                    raw: serde_json::json!({ "kind": "principals", "items": items }),
+                })
             }
             "iam.ListRoles" => {
                 let out = self
@@ -150,7 +152,9 @@ impl ResourceEnumerator for AwsProvider {
                         })
                     })
                     .collect();
-                Ok(RawResponse { raw: serde_json::json!({ "kind": "principals", "items": items }) })
+                Ok(RawResponse {
+                    raw: serde_json::json!({ "kind": "principals", "items": items }),
+                })
             }
             other => Err(AkumoError::Unsupported(format!(
                 "AWS enumeration '{other}' is not implemented in v1"
@@ -174,7 +178,9 @@ impl ActionExecutor for AwsProvider {
     ) -> Result<ActionResult> {
         let key = descriptor.key();
         if !grant.permits(&key) {
-            return Err(AkumoError::AccessDenied(format!("capability not granted: {key}")));
+            return Err(AkumoError::AccessDenied(format!(
+                "capability not granted: {key}"
+            )));
         }
         match key.as_str() {
             "iam.CreateAccessKey" => {
@@ -191,7 +197,9 @@ impl ActionExecutor for AwsProvider {
                     .access_key()
                     .map(|k| k.access_key_id().to_string())
                     .unwrap_or_default();
-                Ok(ActionResult { raw: serde_json::json!({ "AccessKeyId": key_id }) })
+                Ok(ActionResult {
+                    raw: serde_json::json!({ "AccessKeyId": key_id }),
+                })
             }
             "iam.DeleteAccessKey" => {
                 let user = required_str(&descriptor.params, "UserName", "iam:DeleteAccessKey")?;
@@ -204,7 +212,9 @@ impl ActionExecutor for AwsProvider {
                     .send()
                     .await
                     .map_err(|e| sdk_error("iam:DeleteAccessKey", e))?;
-                Ok(ActionResult { raw: serde_json::json!({}) })
+                Ok(ActionResult {
+                    raw: serde_json::json!({}),
+                })
             }
             other => Err(AkumoError::Unsupported(format!(
                 "AWS action '{other}' is not implemented in v1"

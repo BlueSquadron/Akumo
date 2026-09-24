@@ -22,7 +22,7 @@ use crate::execution::{
     ExecutionConfig, ExecutionEngine, ExecutionMode, ExecutionOutcome, RevertReport,
 };
 use crate::graph::{AttackGraph, GraphProjection};
-use crate::planner::{AttackPath, Objective, PlannerConfig, PlanningAction, Planner};
+use crate::planner::{AttackPath, Objective, Planner, PlannerConfig, PlanningAction};
 use crate::projection::Projection;
 use crate::report::{build_report, EngagementReport};
 
@@ -40,7 +40,11 @@ impl<'a> Akumo<'a> {
         provider: &'a dyn Provider,
         script_host: &'a dyn ScriptHost,
     ) -> Self {
-        Self { store, provider, script_host }
+        Self {
+            store,
+            provider,
+            script_host,
+        }
     }
 
     /// Open an authorized engagement (FR-A).
@@ -54,13 +58,22 @@ impl<'a> Akumo<'a> {
         authorization_affirmed: bool,
     ) -> Result<EngagementId> {
         EngagementManager::new(self.store)
-            .open(id, scope, provider, credential_ref, actor, authorization_affirmed)
+            .open(
+                id,
+                scope,
+                provider,
+                credential_ref,
+                actor,
+                authorization_affirmed,
+            )
             .await
     }
 
     /// Close an engagement.
     pub async fn close_engagement(&self, engagement: &EngagementId, actor: Actor) -> Result<()> {
-        EngagementManager::new(self.store).close(engagement, actor).await
+        EngagementManager::new(self.store)
+            .close(engagement, actor)
+            .await
     }
 
     /// Invoke the kill-switch on an engagement (FR-A4).
@@ -129,7 +142,13 @@ impl<'a> Akumo<'a> {
     ) -> Result<Vec<AttackPath>> {
         let start = self.provider.identity().resolve_current_principal().await?;
         let graph = self.graph(engagement).await?;
-        Ok(Planner::plan(&graph, &[start.id], objective, actions, config))
+        Ok(Planner::plan(
+            &graph,
+            &[start.id],
+            objective,
+            actions,
+            config,
+        ))
     }
 
     /// Preview a technique (dry-run + blast radius; no mutation) (FR-G2).
@@ -146,7 +165,10 @@ impl<'a> Akumo<'a> {
                 actor,
                 technique,
                 inputs,
-                ExecutionConfig { mode: ExecutionMode::DryRun, ..Default::default() },
+                ExecutionConfig {
+                    mode: ExecutionMode::DryRun,
+                    ..Default::default()
+                },
             )
             .await
     }
@@ -273,15 +295,34 @@ steps:
         .enumeration(
             "iam",
             "ListPrincipals",
-            vec![node("arn:foothold", false), node("arn:admin", true), edge("arn:foothold", "arn:admin")],
+            vec![
+                node("arn:foothold", false),
+                node("arn:admin", true),
+                edge("arn:foothold", "arn:admin"),
+            ],
         )
-        .action("iam", "CreateAccessKey", ActionResult { raw: serde_json::json!({ "AccessKeyId": "AKIA" }) })
-        .action("iam", "DeleteAccessKey", ActionResult { raw: serde_json::json!({}) })
+        .action(
+            "iam",
+            "CreateAccessKey",
+            ActionResult {
+                raw: serde_json::json!({ "AccessKeyId": "AKIA" }),
+            },
+        )
+        .action(
+            "iam",
+            "DeleteAccessKey",
+            ActionResult {
+                raw: serde_json::json!({}),
+            },
+        )
         .build();
 
         let root = std::env::temp_dir().join(format!(
             "akumo-slice-{}",
-            std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
         ));
         let store = FileEventStore::open(&root).unwrap();
         let provider = MockProvider::new(env);
@@ -308,12 +349,16 @@ steps:
 
         // 2. enumerate → 3. graph
         let summary = akumo
-            .enumerate(&id, actor.clone(), &[EnumerationDescriptor {
-                service: "iam".into(),
-                operation: "ListPrincipals".into(),
-                params: serde_json::Map::new(),
-                required_permission: None,
-            }])
+            .enumerate(
+                &id,
+                actor.clone(),
+                &[EnumerationDescriptor {
+                    service: "iam".into(),
+                    operation: "ListPrincipals".into(),
+                    params: serde_json::Map::new(),
+                    required_permission: None,
+                }],
+            )
             .await
             .unwrap();
         assert_eq!(summary.facts_asserted, 3);
@@ -338,7 +383,13 @@ steps:
         let mut inputs = serde_json::Map::new();
         inputs.insert("user".into(), serde_json::json!("arn:target"));
         let outcome = akumo
-            .run(&id, actor.clone(), &technique, &inputs, ExecutionConfig::default())
+            .run(
+                &id,
+                actor.clone(),
+                &technique,
+                &inputs,
+                ExecutionConfig::default(),
+            )
             .await
             .unwrap();
         assert_eq!(outcome.steps_detonated, 1);

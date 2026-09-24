@@ -31,8 +31,13 @@ mod tests {
             return; // tolerate running from an unusual layout
         }
         let mut catalog = Catalog::new();
-        let loaded = catalog.load_dir(&dir).expect("default catalog must load and validate");
-        assert!(loaded >= 5, "expected at least the seeded techniques, got {loaded}");
+        let loaded = catalog
+            .load_dir(&dir)
+            .expect("default catalog must load and validate");
+        assert!(
+            loaded >= 5,
+            "expected at least the seeded techniques, got {loaded}"
+        );
         // Every technique carries a MITRE mapping and expected telemetry (validated on load).
         assert!(catalog.by_provider("aws").len() >= 5);
     }

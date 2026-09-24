@@ -1,4 +1,7 @@
 [toolchain]
-channel = "1.79.0"
+# `stable` (>= 1.85) is required: some transitive dependencies (RustCrypto's base64ct, via
+# sha2/ed25519-dalek) need the edition2024 feature. Reproducibility of the dependency set is provided
+# by the committed Cargo.lock; the toolchain tracks stable so it stays new enough.
+channel = "stable"
 components = ["rustfmt", "clippy"]
 profile = "default"

@@ -68,23 +68,27 @@ impl MockEnvironmentBuilder {
         operation: &str,
         assertions: Vec<Assertion>,
     ) -> Self {
-        self.env
-            .enumerations
-            .insert(format!("{service}.{operation}"), EnumOutcome::Assertions(assertions));
+        self.env.enumerations.insert(
+            format!("{service}.{operation}"),
+            EnumOutcome::Assertions(assertions),
+        );
         self
     }
 
     /// Script a denied enumeration for `service.operation` (drives partial-permission handling).
     pub fn denied_enumeration(mut self, service: &str, operation: &str, reason: &str) -> Self {
-        self.env
-            .enumerations
-            .insert(format!("{service}.{operation}"), EnumOutcome::Denied(reason.to_string()));
+        self.env.enumerations.insert(
+            format!("{service}.{operation}"),
+            EnumOutcome::Denied(reason.to_string()),
+        );
         self
     }
 
     /// Script the result of an action `service.operation`.
     pub fn action(mut self, service: &str, operation: &str, result: ActionResult) -> Self {
-        self.env.actions.insert(format!("{service}.{operation}"), result);
+        self.env
+            .actions
+            .insert(format!("{service}.{operation}"), result);
         self
     }
 

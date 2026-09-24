@@ -47,7 +47,10 @@ pub struct ExecutionConfig {
 
 impl Default for ExecutionConfig {
     fn default() -> Self {
-        Self { mode: ExecutionMode::Execute, consent: ConsentPolicy::Interactive }
+        Self {
+            mode: ExecutionMode::Execute,
+            consent: ConsentPolicy::Interactive,
+        }
     }
 }
 
@@ -122,7 +125,11 @@ impl<'a> ExecutionEngine<'a> {
         provider: &'a dyn Provider,
         script_host: &'a dyn ScriptHost,
     ) -> Self {
-        Self { store, provider, script_host }
+        Self {
+            store,
+            provider,
+            script_host,
+        }
     }
 
     /// Detonate a technique's steps within an active engagement, recording the full lifecycle to the
@@ -135,7 +142,9 @@ impl<'a> ExecutionEngine<'a> {
         inputs: &serde_json::Map<String, serde_json::Value>,
         config: ExecutionConfig,
     ) -> Result<ExecutionOutcome> {
-        let ctx = EngagementManager::new(self.store).context(engagement).await?;
+        let ctx = EngagementManager::new(self.store)
+            .context(engagement)
+            .await?;
         ctx.ensure_active()?;
 
         let journal = Journal::new(self.store);
@@ -206,7 +215,11 @@ impl<'a> ExecutionEngine<'a> {
             }
 
             let detonation = match &step.body {
-                StepBody::Call { service, operation, params } => {
+                StepBody::Call {
+                    service,
+                    operation,
+                    params,
+                } => {
                     let resolved = resolve_params(params, &env)?;
                     let grant = grant_for(service, operation);
                     let descriptor = ActionDescriptor {
@@ -228,8 +241,15 @@ impl<'a> ExecutionEngine<'a> {
                         Err(e) => Err(e),
                     }
                 }
-                StepBody::Script { language, source, capabilities } => {
-                    match self.script_host.execute(*language, source, capabilities, &env) {
+                StepBody::Script {
+                    language,
+                    source,
+                    capabilities,
+                } => {
+                    match self
+                        .script_host
+                        .execute(*language, source, capabilities, &env)
+                    {
                         Ok(value) => Ok((
                             ResolvedCall {
                                 service: "script".to_string(),
@@ -259,7 +279,9 @@ impl<'a> ExecutionEngine<'a> {
                             })?,
                         )
                         .await?;
-                    let report = self.revert(engagement, actor.clone(), Some(&detonation_id)).await?;
+                    let report = self
+                        .revert(engagement, actor.clone(), Some(&detonation_id))
+                        .await?;
                     let status = if report.failed.is_empty() {
                         ExecStatus::FailedAndReverted
                     } else {
@@ -479,7 +501,9 @@ fn build_env(inputs: &serde_json::Map<String, serde_json::Value>) -> Env {
 }
 
 fn grant_for(service: &str, operation: &str) -> CapabilityGrant {
-    CapabilityGrant { allowed: vec![format!("{service}.{operation}")] }
+    CapabilityGrant {
+        allowed: vec![format!("{service}.{operation}")],
+    }
 }
 
 fn static_blast_radius(technique: &Technique) -> BlastRadius {
@@ -487,7 +511,9 @@ fn static_blast_radius(technique: &Technique) -> BlastRadius {
         .steps
         .iter()
         .filter_map(|s| match &s.body {
-            StepBody::Call { service, operation, .. } => Some(format!("{service}.{operation}")),
+            StepBody::Call {
+                service, operation, ..
+            } => Some(format!("{service}.{operation}")),
             StepBody::Script { .. } => None,
         })
         .collect();
@@ -562,9 +588,17 @@ steps:
         .action(
             "iam",
             "CreateAccessKey",
-            ActionResult { raw: serde_json::json!({ "AccessKeyId": "AKIA123" }) },
+            ActionResult {
+                raw: serde_json::json!({ "AccessKeyId": "AKIA123" }),
+            },
         )
-        .action("iam", "DeleteAccessKey", ActionResult { raw: serde_json::json!({}) })
+        .action(
+            "iam",
+            "DeleteAccessKey",
+            ActionResult {
+                raw: serde_json::json!({}),
+            },
+        )
         .build()
     }
 
@@ -601,12 +635,24 @@ steps:
         open_engagement(&store, &id).await;
         // Consent for a mutating-reversible technique.
         EngagementManager::new(&store)
-            .record_consent(&id, Actor::new("op"), ImpactLevel::MutatingReversible, true, None)
+            .record_consent(
+                &id,
+                Actor::new("op"),
+                ImpactLevel::MutatingReversible,
+                true,
+                None,
+            )
             .await
             .unwrap();
 
         let outcome = engine
-            .detonate(&id, Actor::new("op"), &technique, &inputs(), ExecutionConfig::default())
+            .detonate(
+                &id,
+                Actor::new("op"),
+                &technique,
+                &inputs(),
+                ExecutionConfig::default(),
+            )
             .await
             .unwrap();
         assert_eq!(outcome.status, ExecStatus::Completed);
@@ -643,13 +689,19 @@ steps:
                 Actor::new("op"),
                 &technique,
                 &inputs(),
-                ExecutionConfig { mode: ExecutionMode::DryRun, ..Default::default() },
+                ExecutionConfig {
+                    mode: ExecutionMode::DryRun,
+                    ..Default::default()
+                },
             )
             .await
             .unwrap();
         assert_eq!(outcome.status, ExecStatus::DryRun);
         assert_eq!(outcome.steps_detonated, 0);
-        assert_eq!(outcome.blast_radius.provider_calls, vec!["iam.CreateAccessKey".to_string()]);
+        assert_eq!(
+            outcome.blast_radius.provider_calls,
+            vec!["iam.CreateAccessKey".to_string()]
+        );
 
         std::fs::remove_dir_all(&root).ok();
     }
@@ -668,7 +720,13 @@ steps:
 
         // No consent recorded → refused.
         let outcome = engine
-            .detonate(&id, Actor::new("op"), &technique, &inputs(), ExecutionConfig::default())
+            .detonate(
+                &id,
+                Actor::new("op"),
+                &technique,
+                &inputs(),
+                ExecutionConfig::default(),
+            )
             .await
             .unwrap();
         assert_eq!(outcome.status, ExecStatus::ConsentRequired);
@@ -721,12 +779,24 @@ steps:
         let id = EngagementId::new("eng-fail");
         open_engagement(&store, &id).await;
         EngagementManager::new(&store)
-            .record_consent(&id, Actor::new("op"), ImpactLevel::MutatingReversible, true, None)
+            .record_consent(
+                &id,
+                Actor::new("op"),
+                ImpactLevel::MutatingReversible,
+                true,
+                None,
+            )
             .await
             .unwrap();
 
         let outcome = engine
-            .detonate(&id, Actor::new("op"), &technique, &inputs(), ExecutionConfig::default())
+            .detonate(
+                &id,
+                Actor::new("op"),
+                &technique,
+                &inputs(),
+                ExecutionConfig::default(),
+            )
             .await
             .unwrap();
         assert_eq!(outcome.status, ExecStatus::FailedAndReverted);

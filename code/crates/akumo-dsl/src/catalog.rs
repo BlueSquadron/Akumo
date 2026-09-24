@@ -37,7 +37,9 @@ impl Catalog {
         validate(&technique).map_err(|errs| AkumoError::Validation(errs.join("; ")))?;
         let id = technique.metadata.id.clone();
         if self.by_id.contains_key(&id) {
-            return Err(AkumoError::Validation(format!("duplicate technique id '{id}'")));
+            return Err(AkumoError::Validation(format!(
+                "duplicate technique id '{id}'"
+            )));
         }
         self.by_id.insert(id, self.techniques.len());
         self.techniques.push(technique);
@@ -117,7 +119,10 @@ fn collect_yaml(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
         let path = entry?.path();
         if path.is_dir() {
             collect_yaml(&path, out)?;
-        } else if matches!(path.extension().and_then(|e| e.to_str()), Some("yaml" | "yml")) {
+        } else if matches!(
+            path.extension().and_then(|e| e.to_str()),
+            Some("yaml" | "yml")
+        ) {
             out.push(path);
         }
     }

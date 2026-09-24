@@ -17,7 +17,10 @@ pub struct ScopeSelector {
 impl ScopeSelector {
     /// Build a selector.
     pub fn new(kind: impl Into<String>, value: impl Into<String>) -> Self {
-        Self { kind: kind.into(), value: value.into() }
+        Self {
+            kind: kind.into(),
+            value: value.into(),
+        }
     }
 }
 
