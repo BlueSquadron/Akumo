@@ -33,17 +33,26 @@ pub struct Epistemic {
 impl Epistemic {
     /// A proven assertion.
     pub const fn proven() -> Self {
-        Self { status: EpistemicStatus::Proven, confidence: None }
+        Self {
+            status: EpistemicStatus::Proven,
+            confidence: None,
+        }
     }
 
     /// An absent assertion (observed not to exist).
     pub const fn absent() -> Self {
-        Self { status: EpistemicStatus::Absent, confidence: None }
+        Self {
+            status: EpistemicStatus::Absent,
+            confidence: None,
+        }
     }
 
     /// An unknown assertion (unseen — a blind spot, never treated as absent).
     pub const fn unknown() -> Self {
-        Self { status: EpistemicStatus::Unknown, confidence: None }
+        Self {
+            status: EpistemicStatus::Unknown,
+            confidence: None,
+        }
     }
 
     /// An inferred assertion with a confidence in `[0.0, 1.0]` (clamped).

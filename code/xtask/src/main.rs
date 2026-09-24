@@ -78,14 +78,18 @@ fn dep_lint() -> i32 {
     }
 
     // name -> id (for workspace members we guard)
-    let name_to_id: HashMap<&str, &str> =
-        id_to_name.iter().map(|(id, name)| (name.as_str(), id.as_str())).collect();
+    let name_to_id: HashMap<&str, &str> = id_to_name
+        .iter()
+        .map(|(id, name)| (name.as_str(), id.as_str()))
+        .collect();
 
     // Adjacency over NORMAL deps only (exclude dev/build), from the resolve graph.
     let mut normal_deps: HashMap<String, Vec<String>> = HashMap::new();
     if let Some(nodes) = meta["resolve"]["nodes"].as_array() {
         for node in nodes {
-            let Some(id) = node["id"].as_str() else { continue };
+            let Some(id) = node["id"].as_str() else {
+                continue;
+            };
             let mut out = Vec::new();
             if let Some(deps) = node["deps"].as_array() {
                 for d in deps {
@@ -160,7 +164,9 @@ fn dep_lint() -> i32 {
 fn docgen() -> i32 {
     use akumo_dsl::schema::{StepBody, Technique};
 
-    let content = std::env::args().nth(2).unwrap_or_else(|| "content".to_string());
+    let content = std::env::args()
+        .nth(2)
+        .unwrap_or_else(|| "content".to_string());
     let out = std::env::args()
         .nth(3)
         .unwrap_or_else(|| "../docs/external/reference/techniques".to_string());
@@ -187,7 +193,10 @@ fn docgen() -> i32 {
     fn render(t: &Technique) -> String {
         let m = &t.metadata;
         let mut s = String::new();
-        s.push_str(&format!("# {}\n\n`{}`\n\n{}\n\n", m.name, m.id, m.description));
+        s.push_str(&format!(
+            "# {}\n\n`{}`\n\n{}\n\n",
+            m.name, m.id, m.description
+        ));
         s.push_str("## Metadata\n\n");
         s.push_str(&format!(
             "- **Provider:** {}\n- **Version:** {}\n- **Impact:** {}\n- **MITRE:** {}\n",
@@ -207,8 +216,12 @@ fn docgen() -> i32 {
         {
             s.push_str("## Contract\n\n");
             if !t.contract.inputs.is_empty() {
-                let inputs: Vec<String> =
-                    t.contract.inputs.iter().map(|i| format!("`{}`", i.name)).collect();
+                let inputs: Vec<String> = t
+                    .contract
+                    .inputs
+                    .iter()
+                    .map(|i| format!("`{}`", i.name))
+                    .collect();
                 s.push_str(&format!("**Inputs:** {}\n\n", inputs.join(", ")));
             }
             if !t.contract.preconditions.is_empty() {
@@ -226,7 +239,11 @@ fn docgen() -> i32 {
             if !t.contract.effects.is_empty() {
                 s.push_str("**Effects:**\n");
                 for e in &t.contract.effects {
-                    s.push_str(&format!("- `{}({})`\n", e.predicate.name, e.predicate.args.join(", ")));
+                    s.push_str(&format!(
+                        "- `{}({})`\n",
+                        e.predicate.name,
+                        e.predicate.args.join(", ")
+                    ));
                 }
                 s.push('\n');
             }
@@ -236,7 +253,9 @@ fn docgen() -> i32 {
             s.push_str("## Steps\n\n");
             for step in &t.steps {
                 let body = match &step.body {
-                    StepBody::Call { service, operation, .. } => {
+                    StepBody::Call {
+                        service, operation, ..
+                    } => {
                         format!("call `{service}.{operation}`")
                     }
                     StepBody::Script { language, .. } => format!("script ({language:?})"),
@@ -289,7 +308,13 @@ fn docgen() -> i32 {
 
 fn doc_slug(s: &str) -> String {
     s.chars()
-        .map(|c| if c.is_ascii_alphanumeric() { c.to_ascii_lowercase() } else { '-' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() {
+                c.to_ascii_lowercase()
+            } else {
+                '-'
+            }
+        })
         .collect()
 }
 
@@ -302,7 +327,9 @@ fn doc_slug(s: &str) -> String {
 fn leak_detector() -> i32 {
     use std::fs;
 
-    let dir = std::env::args().nth(2).unwrap_or_else(|| "./.akumo-state".to_string());
+    let dir = std::env::args()
+        .nth(2)
+        .unwrap_or_else(|| "./.akumo-state".to_string());
     let path = std::path::Path::new(&dir);
     if !path.exists() {
         println!("leak-detector: no state dir at '{dir}'; nothing to check");
@@ -326,7 +353,11 @@ fn leak_detector() -> i32 {
         if file.extension().and_then(|e| e.to_str()) != Some("jsonl") {
             continue;
         }
-        let engagement = file.file_stem().and_then(|s| s.to_str()).unwrap_or("?").to_string();
+        let engagement = file
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("?")
+            .to_string();
         let content = match fs::read_to_string(&file) {
             Ok(c) => c,
             Err(e) => {
@@ -347,14 +378,26 @@ fn leak_detector() -> i32 {
             };
             let event_type = event.get("type").and_then(|v| v.as_str()).unwrap_or("");
             let payload = &event["payload"];
-            let det = payload.get("detonation_id").and_then(|v| v.as_str()).unwrap_or("");
-            let step = payload.get("step_id").and_then(|v| v.as_str()).unwrap_or("");
+            let det = payload
+                .get("detonation_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let step = payload
+                .get("step_id")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
             let key = (det.to_string(), step.to_string());
             match event_type {
                 "StepDetonated" => {
                     let call = payload.get("call");
-                    let service = call.and_then(|c| c.get("service")).and_then(|v| v.as_str()).unwrap_or("?");
-                    let operation = call.and_then(|c| c.get("operation")).and_then(|v| v.as_str()).unwrap_or("?");
+                    let service = call
+                        .and_then(|c| c.get("service"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?");
+                    let operation = call
+                        .and_then(|c| c.get("operation"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?");
                     detonated.insert(key, format!("{service}.{operation}"));
                 }
                 "StepReverted" => {
@@ -371,7 +414,10 @@ fn leak_detector() -> i32 {
             }
         }
         if !outstanding.is_empty() {
-            eprintln!("engagement '{engagement}': {} outstanding detonation(s):", outstanding.len());
+            eprintln!(
+                "engagement '{engagement}': {} outstanding detonation(s):",
+                outstanding.len()
+            );
             for (call, det, step) in &outstanding {
                 eprintln!("  - {call}  (detonation {det}, step {step})");
             }

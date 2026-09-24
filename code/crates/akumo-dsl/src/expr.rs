@@ -441,7 +441,9 @@ fn number_value(n: f64) -> Value {
     if n.is_finite() && n.fract() == 0.0 {
         Value::from(n as i64)
     } else {
-        serde_json::Number::from_f64(n).map(Value::Number).unwrap_or(Value::Null)
+        serde_json::Number::from_f64(n)
+            .map(Value::Number)
+            .unwrap_or(Value::Null)
     }
 }
 
@@ -479,10 +481,14 @@ fn eval_bin(op: BinOp, l: &Expr, r: &Expr, env: &Env) -> Result<Value> {
     // Short-circuit logical operators.
     match op {
         BinOp::And => {
-            return Ok(Value::Bool(as_bool(&eval_expr(l, env)?)? && as_bool(&eval_expr(r, env)?)?))
+            return Ok(Value::Bool(
+                as_bool(&eval_expr(l, env)?)? && as_bool(&eval_expr(r, env)?)?,
+            ))
         }
         BinOp::Or => {
-            return Ok(Value::Bool(as_bool(&eval_expr(l, env)?)? || as_bool(&eval_expr(r, env)?)?))
+            return Ok(Value::Bool(
+                as_bool(&eval_expr(l, env)?)? || as_bool(&eval_expr(r, env)?)?,
+            ))
         }
         _ => {}
     }
@@ -528,15 +534,21 @@ fn eval_call(name: &str, args: &[Expr], env: &Env) -> Result<Value> {
         }
         "contains" => {
             arity(2)?;
-            Ok(Value::Bool(as_str(&values[0])?.contains(as_str(&values[1])?)))
+            Ok(Value::Bool(
+                as_str(&values[0])?.contains(as_str(&values[1])?),
+            ))
         }
         "starts_with" => {
             arity(2)?;
-            Ok(Value::Bool(as_str(&values[0])?.starts_with(as_str(&values[1])?)))
+            Ok(Value::Bool(
+                as_str(&values[0])?.starts_with(as_str(&values[1])?),
+            ))
         }
         "ends_with" => {
             arity(2)?;
-            Ok(Value::Bool(as_str(&values[0])?.ends_with(as_str(&values[1])?)))
+            Ok(Value::Bool(
+                as_str(&values[0])?.ends_with(as_str(&values[1])?),
+            ))
         }
         "lower" => {
             arity(1)?;
@@ -551,11 +563,13 @@ fn eval_call(name: &str, args: &[Expr], env: &Env) -> Result<Value> {
 }
 
 fn as_bool(v: &Value) -> Result<bool> {
-    v.as_bool().ok_or_else(|| err(&format!("expected a boolean, got {v}")))
+    v.as_bool()
+        .ok_or_else(|| err(&format!("expected a boolean, got {v}")))
 }
 
 fn as_str(v: &Value) -> Result<&str> {
-    v.as_str().ok_or_else(|| err(&format!("expected a string, got {v}")))
+    v.as_str()
+        .ok_or_else(|| err(&format!("expected a string, got {v}")))
 }
 
 fn value_eq(a: &Value, b: &Value) -> bool {
@@ -653,7 +667,10 @@ mod tests {
         Env::new()
             .with("user", json!("alice"))
             .with("count", json!(3))
-            .with("result", json!({ "AccessKey": { "AccessKeyId": "AKIA123" } }))
+            .with(
+                "result",
+                json!({ "AccessKey": { "AccessKeyId": "AKIA123" } }),
+            )
             .with("flag", json!(true))
     }
 

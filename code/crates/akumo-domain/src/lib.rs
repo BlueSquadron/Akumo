@@ -29,7 +29,9 @@ pub mod seam;
 pub use epistemic::{Epistemic, EpistemicStatus};
 pub use error::{AkumoError, Result};
 pub use event::EventEnvelope;
-pub use graph::{Assertion, CoverageGap, EdgeKind, GraphEdge, GraphNode, NodeId, NodeKind, Provenance};
+pub use graph::{
+    Assertion, CoverageGap, EdgeKind, GraphEdge, GraphNode, NodeId, NodeKind, Provenance,
+};
 pub use ids::{Actor, EngagementId, EventHash, ProviderId, Region, Seq, TechniqueId, Timestamp};
 pub use impact::ImpactLevel;
 pub use principal::{Principal, PrincipalKind};

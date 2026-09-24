@@ -72,7 +72,11 @@ pub struct Provenance {
 impl Provenance {
     /// Convenience constructor.
     pub fn new(source: impl Into<String>, observed_at: Timestamp) -> Self {
-        Self { source: source.into(), permission: None, observed_at }
+        Self {
+            source: source.into(),
+            permission: None,
+            observed_at,
+        }
     }
 }
 

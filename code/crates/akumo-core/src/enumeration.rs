@@ -56,7 +56,9 @@ impl<'a> EnumerationService<'a> {
         descriptors: &[EnumerationDescriptor],
     ) -> Result<EnumerationSummary> {
         // The engagement must exist and be active (not killed/closed).
-        let ctx = EngagementManager::new(self.store).context(engagement).await?;
+        let ctx = EngagementManager::new(self.store)
+            .context(engagement)
+            .await?;
         ctx.ensure_active()?;
 
         let journal = Journal::new(self.store);
@@ -211,7 +213,11 @@ mod tests {
         .enumeration(
             "iam",
             "ListPrincipals",
-            vec![node("arn:foothold"), node("arn:admin"), edge("arn:foothold", "arn:admin")],
+            vec![
+                node("arn:foothold"),
+                node("arn:admin"),
+                edge("arn:foothold", "arn:admin"),
+            ],
         )
         .denied_enumeration("kms", "ListKeys", "kms:ListKeys")
         .build();
@@ -236,7 +242,10 @@ mod tests {
             .enumerate(
                 &id,
                 Actor::new("op"),
-                &[descriptor("iam", "ListPrincipals"), descriptor("kms", "ListKeys")],
+                &[
+                    descriptor("iam", "ListPrincipals"),
+                    descriptor("kms", "ListKeys"),
+                ],
             )
             .await
             .unwrap();
@@ -278,10 +287,16 @@ mod tests {
         )
         .await
         .unwrap();
-        mgr.invoke_kill_switch(&id, Actor::new("op"), "abort").await.unwrap();
+        mgr.invoke_kill_switch(&id, Actor::new("op"), "abort")
+            .await
+            .unwrap();
 
         let result = EnumerationService::new(&store, &provider)
-            .enumerate(&id, Actor::new("op"), &[descriptor("iam", "ListPrincipals")])
+            .enumerate(
+                &id,
+                Actor::new("op"),
+                &[descriptor("iam", "ListPrincipals")],
+            )
             .await;
         assert!(result.is_err());
 

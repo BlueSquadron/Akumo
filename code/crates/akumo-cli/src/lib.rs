@@ -38,7 +38,11 @@ pub mod exit {
 }
 
 #[derive(Parser)]
-#[command(name = "akumo", version, about = "Akumo — cloud offensive security framework")]
+#[command(
+    name = "akumo",
+    version,
+    about = "Akumo — cloud offensive security framework"
+)]
 struct Cli {
     /// Directory holding engagement ledgers.
     #[arg(long, global = true, default_value = "./.akumo-state")]
@@ -211,7 +215,10 @@ pub fn run() -> i32 {
     let store = match FileEventStore::open(&cli.state_dir) {
         Ok(store) => store,
         Err(e) => {
-            eprintln!("error: could not open state dir {}: {e}", cli.state_dir.display());
+            eprintln!(
+                "error: could not open state dir {}: {e}",
+                cli.state_dir.display()
+            );
             return exit::FAILURE;
         }
     };
@@ -300,11 +307,22 @@ async fn handle(command: Command, ctx: &Ctx) -> Result<(), String> {
             } else {
                 println!("principal: {}", report.principal.id);
                 println!("provider:  {}", report.provider);
-                println!("regions:   {}", report.regions.iter().map(|r| r.to_string()).collect::<Vec<_>>().join(", "));
+                println!(
+                    "regions:   {}",
+                    report
+                        .regions
+                        .iter()
+                        .map(|r| r.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                );
             }
             Ok(())
         }
-        Command::Enumerate { engagement, descriptors } => {
+        Command::Enumerate {
+            engagement,
+            descriptors,
+        } => {
             let id = EngagementId::new(engagement);
             let descs: Vec<EnumerationDescriptor> =
                 descriptors.iter().map(|d| parse_descriptor(d)).collect();
@@ -318,7 +336,10 @@ async fn handle(command: Command, ctx: &Ctx) -> Result<(), String> {
             );
             Ok(())
         }
-        Command::Paths { engagement, objective } => {
+        Command::Paths {
+            engagement,
+            objective,
+        } => {
             let id = EngagementId::new(engagement);
             let objective = parse_objective(&objective)?;
             let paths = akumo
@@ -349,7 +370,9 @@ async fn handle(command: Command, ctx: &Ctx) -> Result<(), String> {
         }
         Command::Technique { id, content } => {
             let catalog = load_catalog(&content)?;
-            let t = catalog.get(&id).ok_or_else(|| format!("technique '{id}' not found"))?;
+            let t = catalog
+                .get(&id)
+                .ok_or_else(|| format!("technique '{id}' not found"))?;
             println!("id:       {}", t.metadata.id);
             println!("name:     {}", t.metadata.name);
             println!("impact:   {}", t.metadata.impact);
@@ -361,7 +384,12 @@ async fn handle(command: Command, ctx: &Ctx) -> Result<(), String> {
             }
             Ok(())
         }
-        Command::Preview { engagement, technique, content, inputs } => {
+        Command::Preview {
+            engagement,
+            technique,
+            content,
+            inputs,
+        } => {
             let id = EngagementId::new(engagement);
             let catalog = load_catalog(&content)?;
             let t = catalog
@@ -374,14 +402,24 @@ async fn handle(command: Command, ctx: &Ctx) -> Result<(), String> {
                 .map_err(|e| e.to_string())?;
             let br = &outcome.blast_radius;
             println!("technique:    {}", br.technique_id);
-            println!("impact:       {} (reversible: {})", br.max_impact, br.max_impact.is_reversible());
+            println!(
+                "impact:       {} (reversible: {})",
+                br.max_impact,
+                br.max_impact.is_reversible()
+            );
             println!("provider calls: {}", br.provider_calls.join(", "));
             if !br.effects.is_empty() {
                 println!("effects:      {}", br.effects.join(", "));
             }
             Ok(())
         }
-        Command::Run { engagement, technique, content, inputs, consent } => {
+        Command::Run {
+            engagement,
+            technique,
+            content,
+            inputs,
+            consent,
+        } => {
             let id = EngagementId::new(engagement);
             let catalog = load_catalog(&content)?;
             let t = catalog
@@ -403,26 +441,50 @@ async fn handle(command: Command, ctx: &Ctx) -> Result<(), String> {
                 outcome.status, outcome.steps_detonated, outcome.steps_verified
             );
             if let Some(report) = &outcome.revert {
-                println!("reverted {} step(s); {} could not be undone", report.reverted, report.failed.len());
+                println!(
+                    "reverted {} step(s); {} could not be undone",
+                    report.reverted,
+                    report.failed.len()
+                );
             }
-            if matches!(outcome.status, akumo_core::execution::ExecStatus::ConsentRequired) {
-                println!("hint: re-run with --consent to authorize this {} action", t.metadata.impact);
+            if matches!(
+                outcome.status,
+                akumo_core::execution::ExecStatus::ConsentRequired
+            ) {
+                println!(
+                    "hint: re-run with --consent to authorize this {} action",
+                    t.metadata.impact
+                );
             }
             Ok(())
         }
         Command::Revert { engagement } => {
             let id = EngagementId::new(engagement);
-            let report = akumo.revert(&id, ctx.actor.clone()).await.map_err(|e| e.to_string())?;
-            println!("reverted {} step(s); {} could not be undone", report.reverted, report.failed.len());
+            let report = akumo
+                .revert(&id, ctx.actor.clone())
+                .await
+                .map_err(|e| e.to_string())?;
+            println!(
+                "reverted {} step(s); {} could not be undone",
+                report.reverted,
+                report.failed.len()
+            );
             for failure in &report.failed {
                 println!("  ! {failure}");
             }
             Ok(())
         }
-        Command::Report { engagement, content, format } => {
+        Command::Report {
+            engagement,
+            content,
+            format,
+        } => {
             let id = EngagementId::new(engagement);
             let catalog = load_catalog(&content).ok();
-            let report = akumo.report(&id, catalog.as_ref()).await.map_err(|e| e.to_string())?;
+            let report = akumo
+                .report(&id, catalog.as_ref())
+                .await
+                .map_err(|e| e.to_string())?;
             let as_json = ctx.json || matches!(format, ReportFormat::Json);
             if as_json {
                 println!("{}", report.to_json());
@@ -464,7 +526,11 @@ async fn handle_engagement(cmd: EngagementCmd, ctx: &Ctx, akumo: &Akumo<'_>) -> 
         }
         EngagementCmd::Show { engagement } => {
             let id = EngagementId::new(engagement);
-            match akumo.engagement_state(&id).await.map_err(|e| e.to_string())? {
+            match akumo
+                .engagement_state(&id)
+                .await
+                .map_err(|e| e.to_string())?
+            {
                 Some(state) => {
                     println!("id:       {}", state.id);
                     println!("provider: {}", state.provider);
@@ -472,7 +538,10 @@ async fn handle_engagement(cmd: EngagementCmd, ctx: &Ctx, akumo: &Akumo<'_>) -> 
                     println!("scope:    {} selector(s)", state.scope.allowed.len());
                     println!(
                         "consent:  {}",
-                        state.max_consent.map(|i| i.to_string()).unwrap_or_else(|| "none".to_string())
+                        state
+                            .max_consent
+                            .map(|i| i.to_string())
+                            .unwrap_or_else(|| "none".to_string())
                     );
                     Ok(())
                 }
@@ -481,7 +550,10 @@ async fn handle_engagement(cmd: EngagementCmd, ctx: &Ctx, akumo: &Akumo<'_>) -> 
         }
         EngagementCmd::Close { engagement } => {
             let id = EngagementId::new(engagement);
-            akumo.close_engagement(&id, ctx.actor.clone()).await.map_err(|e| e.to_string())?;
+            akumo
+                .close_engagement(&id, ctx.actor.clone())
+                .await
+                .map_err(|e| e.to_string())?;
             println!("closed engagement {id}");
             Ok(())
         }
@@ -568,7 +640,10 @@ fn parse_inputs(pairs: &[String]) -> Result<serde_json::Map<String, serde_json::
         let (key, value) = pair
             .split_once('=')
             .ok_or_else(|| format!("input '{pair}' must be key=value"))?;
-        map.insert(key.to_string(), serde_json::Value::String(value.to_string()));
+        map.insert(
+            key.to_string(),
+            serde_json::Value::String(value.to_string()),
+        );
     }
     Ok(map)
 }
@@ -577,7 +652,9 @@ fn parse_objective(spec: &str) -> Result<Objective, String> {
     if spec == "admin" {
         Ok(Objective::ReachAdmin)
     } else if let Some(resource) = spec.strip_prefix("resource:") {
-        Ok(Objective::ReachResource { resource: resource.to_string() })
+        Ok(Objective::ReachResource {
+            resource: resource.to_string(),
+        })
     } else {
         Err("objective must be 'admin' or 'resource:<id>'".to_string())
     }

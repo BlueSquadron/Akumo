@@ -165,9 +165,10 @@ impl EngagementContext {
                 "engagement {} is halted by the kill-switch",
                 self.engagement_id
             ))),
-            EngagementStatus::Closed => {
-                Err(AkumoError::Message(format!("engagement {} is closed", self.engagement_id)))
-            }
+            EngagementStatus::Closed => Err(AkumoError::Message(format!(
+                "engagement {} is closed",
+                self.engagement_id
+            ))),
         }
     }
 
@@ -270,7 +271,9 @@ impl<'a> EngagementManager<'a> {
             ));
         }
         if self.load(&id).await?.is_some() {
-            return Err(AkumoError::Validation(format!("engagement {id} already exists")));
+            return Err(AkumoError::Validation(format!(
+                "engagement {id} already exists"
+            )));
         }
         let payload = serde_json::to_value(EngagementOpenedPayload {
             scope,
@@ -304,7 +307,11 @@ impl<'a> EngagementManager<'a> {
         note: Option<String>,
     ) -> Result<()> {
         self.require_active(id).await?;
-        let payload = serde_json::to_value(ConsentRecordedPayload { impact, granted, note })?;
+        let payload = serde_json::to_value(ConsentRecordedPayload {
+            impact,
+            granted,
+            note,
+        })?;
         Journal::new(self.store)
             .record(id, actor, event_type::CONSENT_RECORDED, payload)
             .await?;
@@ -320,7 +327,9 @@ impl<'a> EngagementManager<'a> {
         reason: impl Into<String>,
     ) -> Result<()> {
         self.require_exists(id).await?;
-        let payload = serde_json::to_value(KillSwitchPayload { reason: reason.into() })?;
+        let payload = serde_json::to_value(KillSwitchPayload {
+            reason: reason.into(),
+        })?;
         Journal::new(self.store)
             .record(id, actor, event_type::KILL_SWITCH_INVOKED, payload)
             .await?;
@@ -331,7 +340,12 @@ impl<'a> EngagementManager<'a> {
     pub async fn close(&self, id: &EngagementId, actor: Actor) -> Result<()> {
         self.require_exists(id).await?;
         Journal::new(self.store)
-            .record(id, actor, event_type::ENGAGEMENT_CLOSED, serde_json::json!({}))
+            .record(
+                id,
+                actor,
+                event_type::ENGAGEMENT_CLOSED,
+                serde_json::json!({}),
+            )
             .await?;
         Ok(())
     }
@@ -387,7 +401,13 @@ mod tests {
             Ok(())
         }
         async fn read_stream(&self, engagement: &EngagementId) -> Result<Vec<EventEnvelope>> {
-            Ok(self.inner.lock().unwrap().get(engagement).cloned().unwrap_or_default())
+            Ok(self
+                .inner
+                .lock()
+                .unwrap()
+                .get(engagement)
+                .cloned()
+                .unwrap_or_default())
         }
         async fn last_hash(&self, engagement: &EngagementId) -> Result<Option<EventHash>> {
             Ok(self
@@ -419,12 +439,26 @@ mod tests {
         let mgr = EngagementManager::new(&store);
 
         let no_auth = mgr
-            .open(EngagementId::new("e"), scope(), ProviderId::new("mock"), "cred", Actor::new("op"), false)
+            .open(
+                EngagementId::new("e"),
+                scope(),
+                ProviderId::new("mock"),
+                "cred",
+                Actor::new("op"),
+                false,
+            )
             .await;
         assert!(matches!(no_auth, Err(AkumoError::Validation(_))));
 
         let empty_scope = mgr
-            .open(EngagementId::new("e"), Scope::default(), ProviderId::new("mock"), "cred", Actor::new("op"), true)
+            .open(
+                EngagementId::new("e"),
+                Scope::default(),
+                ProviderId::new("mock"),
+                "cred",
+                Actor::new("op"),
+                true,
+            )
             .await;
         assert!(matches!(empty_scope, Err(AkumoError::Validation(_))));
     }
@@ -434,9 +468,16 @@ mod tests {
         let store = MemStore::default();
         let mgr = EngagementManager::new(&store);
         let id = EngagementId::new("eng-open");
-        mgr.open(id.clone(), scope(), ProviderId::new("mock"), "cred", Actor::new("op"), true)
-            .await
-            .unwrap();
+        mgr.open(
+            id.clone(),
+            scope(),
+            ProviderId::new("mock"),
+            "cred",
+            Actor::new("op"),
+            true,
+        )
+        .await
+        .unwrap();
 
         let state = mgr.load(&id).await.unwrap().unwrap();
         assert_eq!(state.status, EngagementStatus::Open);
@@ -447,7 +488,14 @@ mod tests {
 
         // Opening the same id again is refused.
         assert!(mgr
-            .open(id.clone(), scope(), ProviderId::new("mock"), "cred", Actor::new("op"), true)
+            .open(
+                id.clone(),
+                scope(),
+                ProviderId::new("mock"),
+                "cred",
+                Actor::new("op"),
+                true
+            )
             .await
             .is_err());
     }
@@ -457,11 +505,20 @@ mod tests {
         let store = MemStore::default();
         let mgr = EngagementManager::new(&store);
         let id = EngagementId::new("eng-kill");
-        mgr.open(id.clone(), scope(), ProviderId::new("mock"), "cred", Actor::new("op"), true)
+        mgr.open(
+            id.clone(),
+            scope(),
+            ProviderId::new("mock"),
+            "cred",
+            Actor::new("op"),
+            true,
+        )
+        .await
+        .unwrap();
+
+        mgr.invoke_kill_switch(&id, Actor::new("op"), "manual abort")
             .await
             .unwrap();
-
-        mgr.invoke_kill_switch(&id, Actor::new("op"), "manual abort").await.unwrap();
         let ctx = mgr.context(&id).await.unwrap();
         assert_eq!(ctx.status, EngagementStatus::Killed);
         assert!(ctx.ensure_active().is_err());
@@ -472,12 +529,25 @@ mod tests {
         let store = MemStore::default();
         let mgr = EngagementManager::new(&store);
         let id = EngagementId::new("eng-consent");
-        mgr.open(id.clone(), scope(), ProviderId::new("mock"), "cred", Actor::new("op"), true)
-            .await
-            .unwrap();
-        mgr.record_consent(&id, Actor::new("op"), ImpactLevel::MutatingReversible, true, None)
-            .await
-            .unwrap();
+        mgr.open(
+            id.clone(),
+            scope(),
+            ProviderId::new("mock"),
+            "cred",
+            Actor::new("op"),
+            true,
+        )
+        .await
+        .unwrap();
+        mgr.record_consent(
+            &id,
+            Actor::new("op"),
+            ImpactLevel::MutatingReversible,
+            true,
+            None,
+        )
+        .await
+        .unwrap();
         let state = mgr.load(&id).await.unwrap().unwrap();
         assert_eq!(state.max_consent, Some(ImpactLevel::MutatingReversible));
     }
@@ -485,9 +555,17 @@ mod tests {
     #[test]
     fn consent_policy_logic() {
         // Read never needs consent.
-        assert!(consent_satisfied(ConsentPolicy::Interactive, None, ImpactLevel::Read));
+        assert!(consent_satisfied(
+            ConsentPolicy::Interactive,
+            None,
+            ImpactLevel::Read
+        ));
         // Interactive needs a recorded consent >= impact.
-        assert!(!consent_satisfied(ConsentPolicy::Interactive, None, ImpactLevel::MutatingReversible));
+        assert!(!consent_satisfied(
+            ConsentPolicy::Interactive,
+            None,
+            ImpactLevel::MutatingReversible
+        ));
         assert!(consent_satisfied(
             ConsentPolicy::Interactive,
             Some(ImpactLevel::Destructive),

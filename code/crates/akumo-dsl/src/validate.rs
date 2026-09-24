@@ -32,7 +32,10 @@ pub fn validate(technique: &Technique) -> Result<(), Vec<String>> {
         errors.push("at least one MITRE ATT&CK mapping is required (FR-F2)".to_string());
     }
     if meta.expected_telemetry.is_empty() {
-        errors.push("expected_telemetry is required — every action carries its detection meaning (FR-I1)".to_string());
+        errors.push(
+            "expected_telemetry is required — every action carries its detection meaning (FR-I1)"
+                .to_string(),
+        );
     }
 
     // Irreversible/destructive techniques must offer a simulated variant (FR-G6).

@@ -39,7 +39,12 @@ pub struct Principal {
 impl Principal {
     /// Construct a principal.
     pub fn new(id: impl Into<String>, kind: PrincipalKind, provider: ProviderId) -> Self {
-        Self { id: id.into(), kind, display_name: None, provider }
+        Self {
+            id: id.into(),
+            kind,
+            display_name: None,
+            provider,
+        }
     }
 
     /// Attach a display name (builder-style).
@@ -55,8 +60,12 @@ mod tests {
 
     #[test]
     fn builder_sets_display_name() {
-        let p = Principal::new("arn:aws:iam::1:role/x", PrincipalKind::Role, ProviderId::new("aws"))
-            .with_display_name("x");
+        let p = Principal::new(
+            "arn:aws:iam::1:role/x",
+            PrincipalKind::Role,
+            ProviderId::new("aws"),
+        )
+        .with_display_name("x");
         assert_eq!(p.display_name.as_deref(), Some("x"));
         assert_eq!(p.kind, PrincipalKind::Role);
     }

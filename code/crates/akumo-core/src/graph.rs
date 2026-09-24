@@ -284,7 +284,10 @@ mod tests {
         );
         let g = GraphProjection::replay([&e_proven, &e_unknown]);
         assert_eq!(g.node_count(), 1);
-        assert_eq!(g.node("p").unwrap().epistemic.status, EpistemicStatus::Proven);
+        assert_eq!(
+            g.node("p").unwrap().epistemic.status,
+            EpistemicStatus::Proven
+        );
     }
 
     #[test]
@@ -307,6 +310,10 @@ mod tests {
         .unwrap();
         let g = GraphProjection::replay([&e]);
         assert_eq!(g.coverage_gaps().len(), 1);
-        assert_eq!(g.node_count(), 0, "a blind spot is not a node (unknown != absent)");
+        assert_eq!(
+            g.node_count(),
+            0,
+            "a blind spot is not a node (unknown != absent)"
+        );
     }
 }

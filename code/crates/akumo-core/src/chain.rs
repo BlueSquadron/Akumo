@@ -91,7 +91,11 @@ impl<'a> ChainExecutor<'a> {
         provider: &'a dyn Provider,
         script_host: &'a dyn ScriptHost,
     ) -> Self {
-        Self { store, provider, script_host }
+        Self {
+            store,
+            provider,
+            script_host,
+        }
     }
 
     /// Execute a chain step-by-step, applying the failure policy (FR-H2).
@@ -114,7 +118,13 @@ impl<'a> ChainExecutor<'a> {
             manager.context(engagement).await?.ensure_active()?;
 
             let outcome = engine
-                .detonate(engagement, actor.clone(), &step.technique, &step.inputs, config.exec)
+                .detonate(
+                    engagement,
+                    actor.clone(),
+                    &step.technique,
+                    &step.inputs,
+                    config.exec,
+                )
                 .await?;
 
             match outcome.status {
@@ -132,7 +142,13 @@ impl<'a> ChainExecutor<'a> {
                 ExecStatus::DryRun => { /* preview only; nothing to track */ }
                 ExecStatus::ConsentRequired => {
                     let revert = self
-                        .apply_policy(&engine, engagement, actor.clone(), &completed_ids, config.failure)
+                        .apply_policy(
+                            &engine,
+                            engagement,
+                            actor.clone(),
+                            &completed_ids,
+                            config.failure,
+                        )
                         .await?;
                     return Ok(ChainOutcome {
                         status: ChainStatus::HaltedConsent,
@@ -142,7 +158,13 @@ impl<'a> ChainExecutor<'a> {
                 }
                 ExecStatus::FailedAndReverted | ExecStatus::FailedRevertIncomplete => {
                     let revert = self
-                        .apply_policy(&engine, engagement, actor.clone(), &completed_ids, config.failure)
+                        .apply_policy(
+                            &engine,
+                            engagement,
+                            actor.clone(),
+                            &completed_ids,
+                            config.failure,
+                        )
                         .await?;
                     let status = chain_failure_status(config.failure, revert.as_ref());
                     return Ok(ChainOutcome {
@@ -208,8 +230,8 @@ fn chain_failure_status(policy: ChainFailurePolicy, revert: Option<&RevertReport
 #[cfg(test)]
 mod tests {
     use super::*;
-    use akumo_domain::impact::ImpactLevel;
     use akumo_domain::ids::ProviderId;
+    use akumo_domain::impact::ImpactLevel;
     use akumo_domain::principal::{Principal, PrincipalKind};
     use akumo_domain::scope::{Scope, ScopeSelector};
     use akumo_domain::seam::ActionResult;
@@ -261,7 +283,10 @@ steps:
         serde_json::Map::new()
     }
 
-    async fn setup(tag: &str, env: MockEnvironment) -> (FileEventStore, MockProvider, EngagementId) {
+    async fn setup(
+        tag: &str,
+        env: MockEnvironment,
+    ) -> (FileEventStore, MockProvider, EngagementId) {
         let store = FileEventStore::open(temp_root(tag)).unwrap();
         let provider = MockProvider::new(env);
         let id = EngagementId::new(format!("eng-{tag}"));
@@ -276,9 +301,15 @@ steps:
         )
         .await
         .unwrap();
-        mgr.record_consent(&id, Actor::new("op"), ImpactLevel::MutatingReversible, true, None)
-            .await
-            .unwrap();
+        mgr.record_consent(
+            &id,
+            Actor::new("op"),
+            ImpactLevel::MutatingReversible,
+            true,
+            None,
+        )
+        .await
+        .unwrap();
         (store, provider, id)
     }
 
@@ -385,7 +416,10 @@ steps:
                 &id,
                 Actor::new("op"),
                 &chain,
-                &ChainConfig { failure: ChainFailurePolicy::HaltAndHold, ..ChainConfig::default() },
+                &ChainConfig {
+                    failure: ChainFailurePolicy::HaltAndHold,
+                    ..ChainConfig::default()
+                },
             )
             .await
             .unwrap();
